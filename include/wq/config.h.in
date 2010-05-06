@@ -1,0 +1,13 @@
+#ifndef WQ_CONFIG_H
+#define WQ_CONFIG_H
+
+// defines of wq framework version - 3 sections
+#define WQ_MAJOR_VERSION @WQ_MAJOR_VERSION@
+#define WQ_MINOR_VERSION @WQ_MINOR_VERSION@
+#define WQ_MAINTENANCE_VERSION @WQ_MAINTENANCE_VERSION@
+
+// define of full version of wq - have to be used in strings directives ("")
+#define WQ_FULL_VERSION WQ_MAJOR_VERSION.WQ_MINOR_VERSION.WQ_MAINTENANCE_VERSION
+
+
+#endif // WQ_CONFIG_H

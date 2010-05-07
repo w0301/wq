@@ -6,6 +6,16 @@ set(WQ_MAJOR_VERSION 0)
 set(WQ_MINOR_VERSION 0)
 set(WQ_MAINTENANCE_VERSION 0)
 
+# Setting of libs platform.
+if(UNIX)
+    set(WQ_UNIX 1)
+elseif(WIN32)
+    set(WQ_WINDOWS 1)
+endif(UNIX)
+
+# We have to set definition which indicate that libs are beeing built.
+add_definitions(-DWQ_BUILDING)
+
 # We will set the default build mode - of course to Release mode.
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING
@@ -55,4 +65,3 @@ if(UNIX)
 else(NOT UNIX)
 	# TODO: Windows destination dirs will be more complex.
 endif(UNIX)
-

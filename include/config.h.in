@@ -1,15 +1,37 @@
+/****************************************************************************
+**
+** Copyright (C) 2010 Richard Kakaš.
+** All rights reserved.
+** Contact: Richard Kakaš <richard.kakas@gmail.com>
+**
+** @LICENSE_START@
+** GNU General Public License Usage
+** This file may be used under the terms of the GNU
+** General Public License version 3.0 as published by the Free Software
+** Foundation and appearing in the file LICENSE included in the
+** packaging of this file.  Please review the following information to
+** ensure the GNU General Public License version 3.0 requirements will be
+** met: http://www.gnu.org/copyleft/gpl.html.
+** @LICENSE_END@
+**
+****************************************************************************/
+
 #ifndef WQ_CONFIG_H
 #define WQ_CONFIG_H
 
 // defines of wq framework version - 3 sections
-#define WQ_MAJOR_VERSION @WQ_MAJOR_VERSION@
-#define WQ_MINOR_VERSION @WQ_MINOR_VERSION@
-#define WQ_MAINTENANCE_VERSION @WQ_MAINTENANCE_VERSION@
+#define WQ_MAJOR_VERSION "@WQ_MAJOR_VERSION@"
+#define WQ_MINOR_VERSION "@WQ_MINOR_VERSION@"
+#define WQ_MAINTENANCE_VERSION "@WQ_MAINTENANCE_VERSION@"
 
 // define of full version of wq - have to be used in strings directives ("")
-#define WQ_FULL_VERSION WQ_MAJOR_VERSION.WQ_MINOR_VERSION.WQ_MAINTENANCE_VERSION
+#define WQ_FULL_VERSION WQ_MAJOR_VERSION"."WQ_MINOR_VERSION"."WQ_MAINTENANCE_VERSION
+
+// define of platform for which libs were built
+#cmakedefine WQ_UNIX
+#cmakedefine WQ_WINDOWS
 
 // defined to 1 if we are building shared libs else it is defined to 0
 #cmakedefine01 WQ_SHARED_LIBS
 
-#endif // WQ_CONFIG_H
+#endif  // WQ_CONFIG_H

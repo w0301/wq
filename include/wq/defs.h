@@ -1,8 +1,84 @@
+/****************************************************************************
+**
+** Copyright (C) 2010 Richard Kakaš.
+** All rights reserved.
+** Contact: Richard Kakaš <richard.kakas@gmail.com>
+**
+** @LICENSE_START@
+** GNU General Public License Usage
+** This file may be used under the terms of the GNU
+** General Public License version 3.0 as published by the Free Software
+** Foundation and appearing in the file LICENSE included in the
+** packaging of this file.  Please review the following information to
+** ensure the GNU General Public License version 3.0 requirements will be
+** met: http://www.gnu.org/copyleft/gpl.html.
+** @LICENSE_END@
+**
+****************************************************************************/
+
 #ifndef WQ_DEFS_H
 #define WQ_DEFS_H
 
 #include "wq/config.h"
 
+#include <cstddef>
+
+namespace wq {
+
+// first of all - defines for exporting to DLL libs
+#if WQ_SHARED_LIBS && defined(WQ_WINDOWS)
+	#ifdef WQ_BUILDING
+		#define WQ_EXPORT __declspec(dllexport)
+	#elif
+		#define WQ_EXPORT __declspec(dllimport)
+	#endif  // WQ_BUILDING
+#else
+	#define WQ_EXPORT
+#endif  // WQ_SHARED_LIBS
+
+// define which should be use for disable copying of object
+#define WQ_NO_COPY(className)	\
+	private:	\
+		className(const className&);	\
+		className& operator= (const className&);
+
+// now defining of integer types for each size
+typedef signed char int8;
+typedef unsigned char uint8;
+
+typedef signed short int16;
+typedef unsigned short uint16;
+
+typedef signed int int32;
+typedef unsigned int uint32;
+
+typedef signed long long int64;
+typedef unsigned long long uint64;
+
+// some shortcuts
+typedef unint32 uint;
+
+// definition of type that will be used for size types in containers etc.
+typedef ::size_t size_t;
 
 
-#endif WQ_DEFS_H // WQ_DEFS_H
+// class for setting flags similar to Qt's one
+template<typename T> class flags {
+	public:
+		flags() : m_flags(0) { };
+		flags(const flags& r) : m_flags(r.m_flags) { };
+		flags& operator= (const flags& r) {
+			if(this != &r) {
+				m_flags = r.m_flags;
+			}
+			return *this;
+		};
+
+	private:
+		uint m_flags;
+};
+
+}  // namespace wq
+
+
+#endif  // WQ_DEFS_H

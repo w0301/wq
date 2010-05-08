@@ -61,7 +61,6 @@ typedef uint32 uint;
 // definition of type that will be used for size types in containers etc.
 typedef ::size_t size_t;
 
-
 // class for setting flags similar to Qt's one
 template<typename T> class flags {
 	public:

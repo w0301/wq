@@ -16,13 +16,11 @@
 **
 ****************************************************************************/
 
-#include "wq/defs.h"
-#include "wq/core/vector.h"
+/*!
+	\class wq::core::vector
+	\brief The simplest container.
 
-#include <iostream>
-
-int main() {
-
-
-	return 0;
-}
+	For now this container is just wrapper for std::vector.
+	It behave exactly same as std::vector for more info see
+	standard documentation for std::vector.
+*/

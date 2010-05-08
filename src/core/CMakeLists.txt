@@ -1,6 +1,6 @@
 
-# First of all we will set path and name of output library here.
-set(WQ_CORE_LIB_NAME "${WQ_OUTPUT_LIBS_PATH}/wqCore${WQ_OUTPUT_LIBS_SUFFIX}")
+# First of all we will set name of output library here.
+set(WQ_CORE_LIB_NAME "wqCore${WQ_OUTPUT_LIBS_SUFFIX}")
 
 # Now we will specify sources from which will be library built.
 set(WQ_CORE_SOURCES "") # "common/*.cpp")

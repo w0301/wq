@@ -56,7 +56,7 @@ typedef signed long long int64;
 typedef unsigned long long uint64;
 
 // some shortcuts
-typedef unint32 uint;
+typedef uint32 uint;
 
 // definition of type that will be used for size types in containers etc.
 typedef ::size_t size_t;
@@ -65,7 +65,12 @@ typedef ::size_t size_t;
 // class for setting flags similar to Qt's one
 template<typename T> class flags {
 	public:
-		flags() : m_flags(0) { };
+		typedef T enum_type;
+
+		// creations functions and operators
+		flags() : m_flags(enum_type(0)) { };
+		flags(uint val) : m_flags(val) { };
+		flags(enum_type val) : m_flags(val) { };
 		flags(const flags& r) : m_flags(r.m_flags) { };
 		flags& operator= (const flags& r) {
 			if(this != &r) {
@@ -74,9 +79,65 @@ template<typename T> class flags {
 			return *this;
 		};
 
+		// getting value of all flags
+		operator uint () {
+			return m_flags;
+		};
+		uint value() {
+			return m_flags;
+		};
+		const uint value() const {
+			return m_flags;
+		};
+
+		// (un-)setting flag
+		void set(enum_type flag) {
+			m_flags |= flag;
+		};
+		void unset(enum_type flag) {
+			m_flags ^= flag;
+		};
+
+		// testing for particular flag
+		bool test(enum_type flag) const {
+			return m_flags & flag;
+		};
+		bool operator! () const {
+			return m_flags == 0;
+		};
+
+		// bit operators
+		flags operator| (flags r) const {
+			return flags(m_flags | r.m_flags);
+		};
+		flags operator& (flags r) const {
+			return flags(m_flags & r.m_flags);
+		};
+		flags operator^ (flags r) const {
+			return flags(m_flags ^ r.m_flags);
+		};
+		flags operator~ () const {
+			return flags(~m_flags);
+		};
+
+		// bit operators with assignment
+		flags& operator|= (flags r) {
+			return ( (*this) = ((*this) | r) );
+		};
+		flags& operator&= (flags r) {
+			return ( (*this) = ((*this) & r) );
+		};
+		flags& operator^= (flags r) {
+			return ( (*this) = ((*this) ^ r) );
+		};
+
 	private:
 		uint m_flags;
 };
+
+// macros for using flags class
+#define WQ_DECLARE_FLAGS(newTypeForFlags, enumType)	\
+	typedef wq::flags<enumType> newTypeForFlags;
 
 }  // namespace wq
 

@@ -34,6 +34,9 @@ set(WQ_SHARED_LIBS ${BUILD_SHARED_LIBS})
 # Adding option to build samples or not.
 option(WQ_BUILD_SAMPLES "Select to ON if you wish to build sample programs. Default is OFF." OFF)
 
+# Adding option to turn STD libraries compatibility on/off.
+option(WQ_STD_COMPATIBILITY "Select to ON if you wish to turn STD compatibilitu ON. Default is OFF." OFF)
+
 # Variable which contains suffix which will be added to all built libraries.
 set(WQ_OUTPUT_LIBS_PATH "${PROJECT_BINARY_DIR}/lib/")
 
@@ -62,6 +65,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${WQ_OUTPUT_LIBS_PATH}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${WQ_OUTPUT_LIBS_PATH}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${WQ_OUTPUT_LIBS_PATH}")
 
+# We will set names of output libraries here - we need them for samples too.
+set(WQ_CORE_LIB_NAME "wqCore${WQ_OUTPUT_LIBS_SUFFIX}")
+
 # Now we are adding subdirectory, where are our sources located.
 add_subdirectory(src/)
 
@@ -81,4 +87,3 @@ if(UNIX)
 else(NOT UNIX)
 	# TODO: Windows destination dirs will be more complex.
 endif(UNIX)
-

@@ -18,11 +18,19 @@
 
 #include "wq/defs.h"
 #include "wq/core/vector.h"
+#include "wq/core/exception.h"
 
 #include <iostream>
 
-int main() {
+using namespace wq;
 
+int main() {
+	try {
+		throw wq::core::exception();
+	}
+	catch(std::exception& e) {
+	    std::cout << e.what() << std::endl;
+    }
 
 	return 0;
 }

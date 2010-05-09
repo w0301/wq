@@ -16,25 +16,33 @@
 **
 ****************************************************************************/
 
-#ifndef WQ_CONFIG_H
-#define WQ_CONFIG_H
+#ifndef WQ_EXCEPTION_H
+#define WQ_EXCEPTION_H
 
-// defines of wq framework version - 3 sections
-#define WQ_MAJOR_VERSION "@WQ_MAJOR_VERSION@"
-#define WQ_MINOR_VERSION "@WQ_MINOR_VERSION@"
-#define WQ_MAINTENANCE_VERSION "@WQ_MAINTENANCE_VERSION@"
+#include "wq/defs.h"
 
-// define of full version of wq - have to be used in strings directives ("")
-#define WQ_FULL_VERSION WQ_MAJOR_VERSION"."WQ_MINOR_VERSION"."WQ_MAINTENANCE_VERSION
+#if WQ_STD_COMPATIBILITY
+	#include <exception>
+#endif
 
-// define of platform for which libs were built
-#cmakedefine WQ_UNIX
-#cmakedefine WQ_WINDOWS
+namespace wq {
+namespace core {
 
-// define of STD compatibility
-#cmakedefine01 WQ_STD_COMPATIBILITY
+class exception
+#if WQ_STD_COMPATIBILITY
+	: public std::exception
+#endif
+{
+	public:
+		exception() throw() { };
+		virtual ~exception() throw() { };
 
-// defined to 1 if we are building shared libs else it is defined to 0
-#cmakedefine01 WQ_SHARED_LIBS
+		virtual const char* what() const throw();
+};
 
-#endif  // WQ_CONFIG_H
+
+}  // namespace core
+}  // namespace wq
+
+
+#endif  // WQ_EXCEPTION_H

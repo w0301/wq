@@ -1,7 +1,4 @@
 
-# First of all we will set name of output library here.
-set(WQ_CORE_LIB_NAME "wqCore${WQ_OUTPUT_LIBS_SUFFIX}")
-
 # Now we will specify sources from which will be library built.
 aux_source_directory("common/" WQ_CORE_SOURCES)
 

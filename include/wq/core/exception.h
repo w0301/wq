@@ -40,6 +40,8 @@ class exception
 		virtual const char* what() const throw();
 };
 
+#define WQ_NO_THROW(...) try { __VA_ARGS__ } catch(...) { }
+
 
 }  // namespace core
 }  // namespace wq

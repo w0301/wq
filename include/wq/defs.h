@@ -59,7 +59,7 @@ typedef unsigned long long uint64;
 typedef uint32 uint;
 
 // definition of type that will be used for size types in containers etc.
-typedef ::size_t size_t;
+typedef std::size_t size_t;
 
 // class for setting flags similar to Qt's one
 template<typename T> class flags {
@@ -137,6 +137,7 @@ template<typename T> class flags {
 // macros for using flags class
 #define WQ_DECLARE_FLAGS(newTypeForFlags, enumType)	\
 	typedef wq::flags<enumType> newTypeForFlags;
+
 
 }  // namespace wq
 

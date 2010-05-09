@@ -51,5 +51,27 @@ const char* exception::what() const throw() {
 	return "Unspecified exception occurred.";
 }
 
+/*!
+	\def WQ_NO_THROW(...)
+	\relates wq::core::exception
+	\brief Disallow throwing of exception.
+
+	This macro is used when somebody wants to prohibit throwing
+	exceptions. It is used like this:
+	\code
+		WQ_NO_THROW(
+			foo1();
+			foo2();
+		)
+	\endcode
+	Please bear in mind that WQ_NO_THROW section is stopped after
+	first exception occurred to override this use nested macros:
+		\code
+		WQ_NO_THROW(
+			WQ_NO_THROW(throw_func());
+			throw_func2();	// this function is called because of nested WQ_NO_THROW
+		)
+	\endcode
+*/
 }  // namespace core
 }  // namespace wq

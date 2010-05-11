@@ -82,5 +82,8 @@ int main() {
 	    std::cout << e.what() << std::endl;
     }
 
+	any<int> a = 10;
+	std::cout << a << std::endl;
+
 	return 0;
 }

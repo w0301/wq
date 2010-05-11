@@ -138,6 +138,51 @@ template<typename T> class flags {
 #define WQ_DECLARE_FLAGS(newTypeForFlags, enumType)	\
 	typedef wq::flags<enumType> newTypeForFlags;
 
+// awesome class for implicit handling of any type :O
+template<class T> class any {
+	public:
+		typedef T value_type;
+		typedef value_type* pointer_type;
+
+		// creating
+		any() : m_ptr(NULL) { };
+		any(const any& r) : m_ptr( new value_type(*r.m_ptr) ) { };
+		any& operator= (const any& r) {
+			if(this != &r) {
+				if(m_ptr != NULL) {
+					delete m_ptr;
+				}
+				m_ptr = new value_type(*r.m_ptr);
+			}
+			return *this;
+		};
+
+		// creating from the type
+		template<class T_VAL> any(const T_VAL& val) : m_ptr( new value_type(val) ) { };
+
+		// destroying
+		~any() {
+			if(m_ptr != NULL) {
+				delete m_ptr;
+			}
+		};
+
+		// casting etc.
+		value_type& val() {
+			return *m_ptr;
+		}
+		const value_type& val() const {
+			return *m_ptr;
+		}
+		operator value_type&() {
+			return *m_ptr;
+		};
+
+	private:
+		value_type *m_ptr;
+};
+
+template <> class any<void>;
 
 }  // namespace wq
 

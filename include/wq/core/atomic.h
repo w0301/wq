@@ -31,17 +31,61 @@ template<class T> class atomic;
 // for integer type
 template<> class atomic<int> {
 	public:
-		atomic(int val = 0) : m_num(val) { };
+		typedef int value_type;
 
+		// creation
+		atomic(int val = 0) : m_num(val) { };
+		atomic& operator= (int val) {
+			set(val);
+			return *this;
+		};
+
+		atomic(const atomic& r) : m_num(r.val()) { };
+		atomic& operator= (const atomic& r) {
+			if(this != &r) {
+				set(r.val());
+			}
+			return *this;
+		};
+
+		// operating with value
 		int set(int);
 		int cmp_set(int, int);
 		int inc(int = 1);
 		int dec(int by = 1) {
 			return inc(-by);
 		};
-
 		int val() const {
 			return m_num;
+		};
+
+		// some operators
+		atomic& operator+= (int by) {
+			inc(by);
+			return *this;
+		};
+		atomic& operator-= (int by) {
+			dec(by);
+			return *this;
+		};
+		atomic& operator++ (int) {
+			return ((*this) += 1);
+		};
+		atomic& operator-- (int by) {
+			return ((*this) -= 1);
+		};
+
+		// not atomic comparing
+		bool operator== (int r) const {
+			return val() == r;
+		};
+		bool operator!= (int r) const {
+			return val() != r;
+		};
+
+		// implicit conversion
+		operator int() const {
+			return val();
 		};
 
 	private:
@@ -95,14 +139,58 @@ template<class T> class atomic<T*> {
 		typedef T value_type;
 		typedef T* pointer_type;
 
+		// creation
 		atomic(pointer_type ptr = NULL) : m_ptr(ptr) { };
-		~atomic() { };
+		atomic& operator= (pointer_type val) {
+			set(val);
+			return *this;
+		};
 
+		atomic(const atomic& r) : m_ptr(r.val()) { };
+		atomic& operator= (const atomic& r) {
+			if(this != &val) {
+				set(r.val());
+			}
+			return *this;
+		};
+
+		// destruction
+		~atomic() {
+			unset();
+		};
+
+		// operating with pointer
 		pointer_type set(pointer_type);
 		pointer_type cmp_set(pointer_type, pointer_type);
-
 		pointer_type val() const {
 			return m_ptr;
+		};
+
+		// no atomic unset
+		void unset() {
+			if(m_ptr != NULL) {
+				delete m_ptr;
+				m_ptr = NULL;
+			}
+		};
+
+		// implicit conversion
+		operator pointer_type() const {
+			return val();
+		};
+		pointer_type operator-> () {
+			return m_ptr;
+		};
+		const pointer_type operator-> () const {
+			return m_ptr;
+		};
+
+		// not atomic comparing
+		bool operator== (pointer_type r) {
+			return val() == r;
+		};
+		bool operator!= (pointer_type r) {
+			return val() != r;
 		};
 
 	private:

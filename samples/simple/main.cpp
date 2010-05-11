@@ -82,5 +82,14 @@ int main() {
 	    std::cout << e.what() << std::endl;
     }
 
+	core::atomic<int> i_atomic;
+	i_atomic += 100;
+	i_atomic -= 101;
+	std::cout << i_atomic << std::endl;
+
+	core::atomic<int*> ptr_atomic;
+	ptr_atomic.set(new int(123));
+	std::cout << ptr_atomic << std::endl;
+
 	return 0;
 }

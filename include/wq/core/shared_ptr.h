@@ -36,8 +36,18 @@ template<class T> class shared_ptr {
 		shared_ptr(pointer_type new_data) : m_ptr(NULL), m_count(NULL) {
 			set_data(new_data);
 		};
+		shared_ptr& operator= (pointer_type r) {
+			set_data(r);
+			return *this;
+		};
 		shared_ptr(const shared_ptr& from) : m_ptr(NULL), m_count(NULL) {
 			set_data(from);
+		};
+		shared_ptr& operator= (const shared_ptr& r) {
+			if(this != &r) {
+				set_data(r);
+			}
+			return *this;
 		};
 
 		// destruction
@@ -58,11 +68,20 @@ template<class T> class shared_ptr {
 		const pointer_type data() const {
 			return m_ptr->val();
 		};
+		const pointer_type const_data() const {
+			return m_ptr->val();
+		};
 		pointer_type operator-> () {
 			return data();
 		};
 		const pointer_type operator-> () const {
 			return data();
+		};
+		data_type& operator* () {
+			return *data();
+		};
+		const data_type& operator* () const {
+			return *data();
 		};
 
 		// getting data owners count
@@ -96,9 +115,11 @@ template<class T> void shared_ptr<T>::set_data(const shared_ptr& from) {
 	// FIXME: is 'from' still avaible here?
 	unset_data();
 
-	from.m_count->inc();
-	m_count = from.m_count;
-	m_ptr = from.m_ptr;
+	if(from.is_ok()) {
+		from.m_count->inc();
+		m_count = from.m_count;
+		m_ptr = from.m_ptr;
+	}
 }
 
 template<class T> void shared_ptr<T>::unset_data() {
@@ -117,7 +138,7 @@ template<class T> void shared_ptr<T>::unset_data() {
 template<class T> void shared_ptr<T>::unshare_data() {
 	if(is_ok() && data_count() > 1) {
 		// we have to copy existing data and set them to shared_ptr
-		pointer_type new_data = new data_type( m_ptr->val() );
+		pointer_type new_data = new data_type( *m_ptr->val() );
 		set_data(new_data);
 	}
 }

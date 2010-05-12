@@ -93,9 +93,12 @@ int main() {
 	std::cout << ptr_atomic << std::endl;
 
 	core::shared_ptr<int> shared(new int(10));
-	core::shared_ptr<int> shared2(shared);
+	{
+		core::shared_ptr<int> shared2(shared);
+		std::cout << shared2.data_count() << std::endl;
+	}
 	std::cout << shared.data_count() << std::endl;
-	std::cout << shared2.data_count() << std::endl;
+	std::cout << *shared << std::endl;
 
 	return 0;
 }

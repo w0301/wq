@@ -40,6 +40,29 @@ namespace core {
 */
 
 /*!
+	\brief Construct new exception object.
+
+	This constructor doesn't do anything special. The biggest
+	thing done by this constructor is calling of std::exception constructor.
+*/
+exception::exception() throw()
+#if WQ_STD_COMPATIBILITY
+	: std::exception()
+#endif
+{
+
+}
+
+/*!
+	\brief Destruct exception object.
+
+	Standard destructor for virtual class.
+*/
+exception::~exception() throw() {
+
+}
+
+/*!
 	\brief Description string.
 
 	This function returns description string for exception.
@@ -52,7 +75,7 @@ const char* exception::what() const throw() {
 }
 
 /*!
-	\def WQ_NO_THROW(...)
+	\fn WQ_NO_THROW(...)
 	\relates wq::core::exception
 	\brief Disallow throwing of exception.
 
@@ -65,7 +88,7 @@ const char* exception::what() const throw() {
 		)
 	\endcode
 	Please bear in mind that WQ_NO_THROW section is stopped after
-	first exception occurred to override this use nested macros:
+	first exception occurred, to override this use nested macros:
 		\code
 		WQ_NO_THROW(
 			WQ_NO_THROW(throw_func());

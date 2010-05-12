@@ -166,11 +166,10 @@ template<class T> class atomic<T*> {
 			return m_ptr;
 		};
 
-		// no atomic unset
+		// atomic unset and deleting of value
 		void unset() {
 			if(m_ptr != NULL) {
-				delete m_ptr;
-				m_ptr = NULL;
+				delete set(NULL);
 			}
 		};
 

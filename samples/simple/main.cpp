@@ -20,6 +20,7 @@
 #include "wq/core/vector.h"
 #include "wq/core/atomic.h"
 #include "wq/core/exception.h"
+#include "wq/core/shared_ptr.h"
 
 #include <iostream>
 
@@ -90,6 +91,11 @@ int main() {
 	core::atomic<int*> ptr_atomic;
 	ptr_atomic.set(new int(123));
 	std::cout << ptr_atomic << std::endl;
+
+	core::shared_ptr<int> shared(new int(10));
+	core::shared_ptr<int> shared2(shared);
+	std::cout << shared.data_count() << std::endl;
+	std::cout << shared2.data_count() << std::endl;
 
 	return 0;
 }

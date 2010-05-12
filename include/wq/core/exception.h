@@ -28,14 +28,14 @@
 namespace wq {
 namespace core {
 
-class exception
+class WQ_EXPORT exception
 #if WQ_STD_COMPATIBILITY
 	: public std::exception
 #endif
 {
 	public:
-		exception() throw() { };
-		virtual ~exception() throw() { };
+		exception() throw();
+		virtual ~exception() throw();
 
 		virtual const char* what() const throw();
 };

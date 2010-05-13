@@ -162,9 +162,6 @@ template<class T> class atomic<T*> {
 		// operating with pointer
 		pointer_type set(pointer_type);
 		pointer_type cmp_set(pointer_type, pointer_type);
-		pointer_type val() const {
-			return m_ptr;
-		};
 
 		// atomic unset and deleting of value
 		void unset() {
@@ -177,11 +174,23 @@ template<class T> class atomic<T*> {
 		operator pointer_type() const {
 			return val();
 		};
-		pointer_type operator-> () {
+		pointer_type val() {
 			return m_ptr;
 		};
-		const pointer_type operator-> () const {
+		const pointer_type val() const {
 			return m_ptr;
+		};
+		pointer_type operator-> () {
+			return val();
+		};
+		const pointer_type operator-> () const {
+			return val();
+		};
+		value_type& operator* () {
+			return *val();
+		};
+		const value_type& operator* () const {
+			return *val();
 		};
 
 		// not atomic comparing

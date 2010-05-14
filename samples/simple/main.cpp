@@ -22,6 +22,8 @@
 #include "wq/core/exception.h"
 #include "wq/core/shared_ptr.h"
 
+#include "wq/core/type_info.h"
+
 #include <iostream>
 
 using namespace wq;
@@ -99,6 +101,11 @@ int main() {
 	}
 	std::cout << shared.data_count() << std::endl;
 	std::cout << *shared << std::endl;
+	std::cout << 0x0010ffff << std::endl;
 
+	char str[] = "č";
+	std::cout << str << std::endl;
+
+	std::cout << core::type_info<void*>::size() << std::endl;
 	return 0;
 }

@@ -21,6 +21,8 @@
 
 #include "wq/defs.h"
 
+#include <typeinfo>
+
 namespace wq {
 namespace core {
 
@@ -39,12 +41,15 @@ template<class T> class type_info {
 		static bool is_moveable() {
 			return false;
 		};
+		static const std::type_info& type_id() {
+			return typeid(value_type);
+		};
 };
 
 // all pointers are movable
 template<class T> class type_info<T*> {
 	public:
-		typedef T value_type;
+		typedef T* value_type;
 		typedef value_type* pointer;
 		typedef const value_type* const_pointer;
 		typedef value_type& reference;
@@ -56,10 +61,45 @@ template<class T> class type_info<T*> {
 		static bool is_moveable() {
 			return true;
 		};
+		static const std::type_info& type_id() {
+			return typeid(value_type);
+		};
+};
+
+// references are special
+template<class T> class type_info<T&> {
+	public:
+		typedef T& value_type;
+
+		static uint size() {
+			return sizeof(value_type);
+		};
+		static bool is_moveable() {
+			return false;
+		};
+		static const std::type_info& type_id() {
+			return typeid(value_type);
+		};
 };
 
 // special declaration for void and void* types
-template<> class type_info<void>;
+template<> class type_info<void> {
+	public:
+		typedef void value_type;
+		typedef value_type* pointer;
+		typedef const value_type* const_pointer;
+
+		static uint size() {
+			return 0;
+		};
+		static bool is_moveable() {
+			return true;
+		};
+		static const std::type_info& type_id() {
+			return typeid(value_type);
+		};
+};
+
 template<> class type_info<void*> {
 	public:
 		typedef void* value_type;
@@ -71,6 +111,9 @@ template<> class type_info<void*> {
 		};
 		static bool is_moveable() {
 			return true;
+		};
+		static const std::type_info& type_id() {
+			return typeid(value_type);
 		};
 };
 

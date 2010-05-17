@@ -26,7 +26,7 @@
 namespace wq {
 namespace core {
 
-// basic allocator and also base class
+// basic allocator and also base class (or just pattern)
 // for all other allocators in wq framework
 template<class T> class allocator {
 	public:

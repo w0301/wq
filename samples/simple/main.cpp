@@ -106,6 +106,7 @@ int main() {
 	char str[] = "č";
 	std::cout << str << std::endl;
 
-	std::cout << core::type_info<void*>::size() << std::endl;
+	std::cout << core::type_info<char>::is_moveable() << std::endl;
+
 	return 0;
 }

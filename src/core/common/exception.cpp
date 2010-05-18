@@ -71,7 +71,7 @@ exception::~exception() throw() {
 	string "Unspecified exception occurred.".
 */
 const char* exception::what() const throw() {
-	return "Unspecified exception occurred.";
+	return "unspecified exception";
 }
 
 /*!

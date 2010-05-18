@@ -61,6 +61,9 @@ typedef uint32 uint;
 // definition of type that will be used for size types in containers etc.
 typedef std::size_t size_t;
 
+// now define for type which is returned by pointer operations
+typedef std::ptrdiff_t ptrdiff_t;
+
 // class for setting flags similar to Qt's one
 template<typename T> class flags {
 	public:

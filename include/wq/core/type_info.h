@@ -100,23 +100,6 @@ template<> class type_info<void> {
 		};
 };
 
-template<> class type_info<void*> {
-	public:
-		typedef void* value_type;
-		typedef value_type* pointer;
-		typedef const value_type* const_pointer;
-
-		static uint size() {
-			return sizeof(value_type);
-		};
-		static bool is_moveable() {
-			return true;
-		};
-		static const std::type_info& type_id() {
-			return typeid(value_type);
-		};
-};
-
 // allowing moving for types by this macro
 #define WQ_MOVEABLE_TYPE(type)                              \
     template <> bool type_info<type>::is_moveable() {       \

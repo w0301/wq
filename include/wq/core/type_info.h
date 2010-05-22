@@ -82,7 +82,7 @@ template<class T> class type_info<T&> {
 		};
 };
 
-// special declaration for void and void* types
+// special declaration for void
 template<> class type_info<void> {
 	public:
 		typedef void value_type;
@@ -93,7 +93,7 @@ template<> class type_info<void> {
 			return 0;
 		};
 		static bool is_moveable() {
-			return true;
+			return false;
 		};
 		static const std::type_info& type_id() {
 			return typeid(value_type);
@@ -101,16 +101,25 @@ template<> class type_info<void> {
 };
 
 // allowing moving for types by this macro
-#define WQ_MOVEABLE_TYPE(type)                              \
-    template <> bool type_info<type>::is_moveable() {       \
-        return true;                                        \
-    }                                                       \
-    template <> bool type_info<const type>::is_moveable() { \
-        return true;                                        \
-    }
+#define WQ_MOVEABLE_TYPE(type)                             \
+	namespace wq {	\
+	namespace core {	\
+	template<> class type_info<type> {		\
+		public:		\
+			typedef type value_type;	\
+			typedef value_type* pointer;	\
+			typedef const value_type* const_pointer;	\
+			typedef value_type& reference;	\
+			typedef const value_type& const_reference;	\
+			static uint size() { return sizeof(value_type); };	\
+			static bool is_moveable() {	return true; };	\
+			static const std::type_info& type_id() { return typeid(value_type); };	\
+	};	}	}
 
-// allowing for all standard types
-WQ_MOVEABLE_TYPE(char);
+}  // namespace core
+}  // namespace wq
+
+// moving is allowed for all standard types
 WQ_MOVEABLE_TYPE(signed char);
 WQ_MOVEABLE_TYPE(unsigned char);
 
@@ -118,24 +127,20 @@ WQ_MOVEABLE_TYPE(wchar_t);
 
 WQ_MOVEABLE_TYPE(bool);
 
-WQ_MOVEABLE_TYPE(short);
+WQ_MOVEABLE_TYPE(signed short);
 WQ_MOVEABLE_TYPE(unsigned short);
 
-WQ_MOVEABLE_TYPE(int);
+WQ_MOVEABLE_TYPE(signed int);
 WQ_MOVEABLE_TYPE(unsigned int);
 
-WQ_MOVEABLE_TYPE(long);
+WQ_MOVEABLE_TYPE(signed long);
 WQ_MOVEABLE_TYPE(unsigned long);
 
-WQ_MOVEABLE_TYPE(long long);
+WQ_MOVEABLE_TYPE(signed long long);
 WQ_MOVEABLE_TYPE(unsigned long long);
 
 WQ_MOVEABLE_TYPE(float);
 WQ_MOVEABLE_TYPE(double);
 WQ_MOVEABLE_TYPE(long double);
-
-}  // namespace core
-}  // namespace wq
-
 
 #endif  // WQ_TYPE_INFO_H

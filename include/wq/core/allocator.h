@@ -33,7 +33,7 @@ namespace wq {
 namespace core {
 
 // very bad exception, nobody wants to catch it, trust me!!!
-class bad_alloc :
+class WQ_EXPORT bad_alloc :
 	public wq::core::exception
 #if WQ_STD_COMPATIBILITY
 	, public std::bad_alloc

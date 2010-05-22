@@ -20,7 +20,6 @@
 #define WQ_STRING_H
 
 #include "wq/defs.h"
-#include "wq/core/exception.h"
 #include "wq/core/allocator.h"
 #include "wq/core/shared_ptr.h"
 
@@ -46,8 +45,6 @@ class WQ_EXPORT string {
 		typedef wq::size_t size_type;
 		typedef wq::ptrdiff_t difference_type;
 		typedef wq::core::allocator<value_type> allocator_type;
-
-
 
 	private:
 

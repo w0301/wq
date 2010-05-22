@@ -137,11 +137,12 @@ inline int atomic<int>::inc(int by) {
 template<class T> class atomic<T*> {
 	public:
 		typedef T value_type;
-		typedef T* pointer_type;
+		typedef value_type* pointer;
+		typedef const pointer const_pointer;
 
 		// creation
-		atomic(pointer_type ptr = NULL) : m_ptr(ptr) { };
-		atomic& operator= (pointer_type val) {
+		atomic(pointer ptr = NULL) : m_ptr(ptr) { };
+		atomic& operator= (pointer val) {
 			set(val);
 			return *this;
 		};
@@ -160,8 +161,8 @@ template<class T> class atomic<T*> {
 		};
 
 		// operating with pointer
-		pointer_type set(pointer_type);
-		pointer_type cmp_set(pointer_type, pointer_type);
+		pointer set(pointer);
+		pointer cmp_set(pointer, pointer);
 
 		// atomic unset and deleting of value
 		void unset() {
@@ -171,19 +172,19 @@ template<class T> class atomic<T*> {
 		};
 
 		// implicit conversion
-		operator pointer_type() const {
+		operator pointer() const {
 			return val();
 		};
-		pointer_type val() {
+		pointer val() {
 			return m_ptr;
 		};
-		const pointer_type val() const {
+		const pointer val() const {
 			return m_ptr;
 		};
-		pointer_type operator-> () {
+		pointer operator-> () {
 			return val();
 		};
-		const pointer_type operator-> () const {
+		const pointer operator-> () const {
 			return val();
 		};
 		value_type& operator* () {
@@ -194,19 +195,19 @@ template<class T> class atomic<T*> {
 		};
 
 		// not atomic comparing
-		bool operator== (pointer_type r) {
+		bool operator== (pointer r) {
 			return val() == r;
 		};
-		bool operator!= (pointer_type r) {
+		bool operator!= (pointer r) {
 			return val() != r;
 		};
 
 	private:
-		volatile pointer_type m_ptr;
+		volatile pointer m_ptr;
 };
 
-template<class T> inline T* atomic<T*>::set(pointer_type new_val) {
-	pointer_type old;
+template<class T> inline T* atomic<T*>::set(pointer new_val) {
+	pointer old;
 #if defined(__i386__) || defined(__x86_64__)
 	asm __volatile__
     (
@@ -223,8 +224,8 @@ template<class T> inline T* atomic<T*>::set(pointer_type new_val) {
 	return old;
 }
 
-template<class T> inline T* atomic<T*>::cmp_set(pointer_type cmp_val, pointer_type new_val) {
-	pointer_type old;
+template<class T> inline T* atomic<T*>::cmp_set(pointer cmp_val, pointer new_val) {
+	pointer old;
 #if defined(__i386__) || defined(__x86_64__)
 	asm __volatile__
     (

@@ -18,11 +18,11 @@
 
 #include "wq/defs.h"
 #include "wq/core/vector.h"
+#include "wq/core/list.h"
 #include "wq/core/atomic.h"
 #include "wq/core/exception.h"
 #include "wq/core/shared_ptr.h"
 #include "wq/core/allocator.h"
-
 #include "wq/core/type_info.h"
 
 #include <iostream>
@@ -54,7 +54,7 @@ void atomic_test() throw(wq::exception) {
 	{
 		typedef wq::atomic<unsigned long*> atomic_type;
 		atomic_type at(NULL);
-		atomic_type::pointer_type new_val = new atomic_type::value_type(10);
+		atomic_type::pointer new_val = new atomic_type::value_type(10);
 
 		std::cout << "old val is: " << at.val() << std::endl;
 		std::cout << "old val is: " << at.set(new_val);
@@ -64,8 +64,8 @@ void atomic_test() throw(wq::exception) {
 	{
 		typedef wq::atomic<int*> atomic_type;
 		atomic_type at(NULL);
-		atomic_type::pointer_type cmp_val = NULL;
-		atomic_type::pointer_type new_val = new atomic_type::value_type();
+		atomic_type::pointer cmp_val = NULL;
+		atomic_type::pointer new_val = new atomic_type::value_type();
 
 		std::cout << "comparing " << at.val() << " with " << cmp_val << std::endl;
 		std::cout << "setting val from: " << at.cmp_set(cmp_val, new_val);
@@ -115,5 +115,6 @@ int main() {
 	std::cout << buff << std::endl;
 
 	al.deallocate(mem);
+
 	return 0;
 }

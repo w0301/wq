@@ -25,18 +25,19 @@
 namespace wq {
 namespace core {
 
-// class for handling shared pieces of data
+// class for handling implicitly shared pieces of data
 template<class T> class shared_ptr {
 	public:
 		typedef T data_type;
-		typedef data_type* pointer_type;
+		typedef data_type* pointer;
+		typedef const pointer const_pointer;
 
 		// creation
 		shared_ptr() : m_ptr(NULL), m_count(NULL) { };
-		shared_ptr(pointer_type new_data) : m_ptr(NULL), m_count(NULL) {
+		shared_ptr(pointer new_data) : m_ptr(NULL), m_count(NULL) {
 			set_data(new_data);
 		};
-		shared_ptr& operator= (pointer_type r) {
+		shared_ptr& operator= (pointer r) {
 			set_data(r);
 			return *this;
 		};
@@ -44,7 +45,7 @@ template<class T> class shared_ptr {
 			set_data(from);
 		};
 		shared_ptr& operator= (const shared_ptr& r) {
-			if(this != &r) {
+			if(this != &r && m_ptr != r.m_ptr) {
 				set_data(r);
 			}
 			return *this;
@@ -61,20 +62,20 @@ template<class T> class shared_ptr {
 		};
 
 		// getting data
-		pointer_type data() {
+		pointer data() {
 			unshare_data();
 			return m_ptr->val();
 		};
-		const pointer_type data() const {
+		const pointer data() const {
 			return m_ptr->val();
 		};
-		const pointer_type const_data() const {
+		const pointer const_data() const {
 			return m_ptr->val();
 		};
-		pointer_type operator-> () {
+		pointer operator-> () {
 			return data();
 		};
-		const pointer_type operator-> () const {
+		const pointer operator-> () const {
 			return data();
 		};
 		data_type& operator* () {
@@ -90,7 +91,7 @@ template<class T> class shared_ptr {
 		};
 
 		// setting/unsetting data
-		void set_data(pointer_type);
+		void set_data(pointer);
 		void set_data(const shared_ptr&);
 		void unset_data();
 
@@ -99,20 +100,19 @@ template<class T> class shared_ptr {
 
 	private:
 		// atomic classes which handle shared pointer
-		wq::core::atomic<pointer_type>* m_ptr;
+		wq::core::atomic<pointer>* m_ptr;
 		wq::core::atomic<int>* m_count;
 };
 
-template<class T> void shared_ptr<T>::set_data(pointer_type new_ptr) {
+template<class T> void shared_ptr<T>::set_data(pointer new_ptr) {
 	unset_data();
 
 	// creating new data handlers and assigning pointer
-	m_ptr = new wq::core::atomic<pointer_type>(new_ptr);
+	m_ptr = new wq::core::atomic<pointer>(new_ptr);
 	m_count = new wq::core::atomic<int>(1);
 }
 
 template<class T> void shared_ptr<T>::set_data(const shared_ptr& from) {
-	// FIXME: is 'from' still avaible here?
 	unset_data();
 
 	if(from.is_ok()) {
@@ -138,7 +138,7 @@ template<class T> void shared_ptr<T>::unset_data() {
 template<class T> void shared_ptr<T>::unshare_data() {
 	if(is_ok() && data_count() > 1) {
 		// we have to copy existing data and set them to shared_ptr
-		pointer_type new_data = new data_type( *m_ptr->val() );
+		pointer new_data = new data_type( *m_ptr->val() );
 		set_data(new_data);
 	}
 }

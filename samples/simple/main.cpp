@@ -27,17 +27,18 @@
 
 #include <iostream>
 
-using namespace std;
-using namespace wq;
-using namespace wq::core;
-
-void exception_test() throw(core::exception) {
-	throw core::exception();
+namespace wq {
+	using namespace core;
 }
 
-void atomic_test() throw(core::exception) {
+
+void exception_test() throw(wq::exception) {
+	throw wq::exception();
+}
+
+void atomic_test() throw(wq::exception) {
 	{
-		core::atomic<int> at(0);
+		wq::atomic<int> at(0);
 		int cmp_val = 0;
 		int new_val = 999;
 		std::cout << "comparing " << at.val() << " with " << cmp_val << std::endl;
@@ -51,7 +52,7 @@ void atomic_test() throw(core::exception) {
 	}
 	std::cout << std::endl;
 	{
-		typedef core::atomic<unsigned long*> atomic_type;
+		typedef wq::atomic<unsigned long*> atomic_type;
 		atomic_type at(NULL);
 		atomic_type::pointer_type new_val = new atomic_type::value_type(10);
 
@@ -61,7 +62,7 @@ void atomic_test() throw(core::exception) {
 	}
 	std::cout << std::endl;
 	{
-		typedef core::atomic<int*> atomic_type;
+		typedef wq::atomic<int*> atomic_type;
 		atomic_type at(NULL);
 		atomic_type::pointer_type cmp_val = NULL;
 		atomic_type::pointer_type new_val = new atomic_type::value_type();
@@ -84,22 +85,22 @@ int main() {
 		);
 		exception_test();
 	}
-	catch(core::exception& e) {
+	catch(wq::exception& e) {
 	    std::cout << e.what() << std::endl;
     }
 
-	core::atomic<int> i_atomic;
+	wq::atomic<int> i_atomic;
 	i_atomic += 100;
 	i_atomic -= 101;
 	std::cout << i_atomic << std::endl;
 
-	core::atomic<int*> ptr_atomic;
+	wq::atomic<int*> ptr_atomic;
 	ptr_atomic.set(new int(123));
 	std::cout << ptr_atomic << std::endl;
 
-	core::shared_ptr<int> shared(new int(10));
+	wq::shared_ptr<int> shared(new int(10));
 	{
-		core::shared_ptr<int> shared2(shared);
+		wq::shared_ptr<int> shared2(shared);
 		std::cout << shared2.data_count() << std::endl;
 	}
 	std::cout << shared.data_count() << std::endl;
@@ -107,8 +108,8 @@ int main() {
 
 	const char buff[] = "ahoj vole :D!!!";
 
-	core::allocator<char> al;
-	core::allocator<char>::pointer mem = al.allocate(sizeof(buff));
+	wq::allocator<char> al;
+	wq::allocator<char>::pointer mem = al.allocate(sizeof(buff));
 	std::cout << al.ocopy(buff, sizeof(buff), mem) << std::endl;
 	std::cout << mem << std::endl;
 	std::cout << buff << std::endl;

@@ -21,7 +21,10 @@
 
 #include "wq/defs.h"
 #include "wq/core/exception.h"
+#include "wq/core/allocator.h"
 #include "wq/core/shared_ptr.h"
+
+#include <iterator>
 
 #if WQ_STD_COMPATIBILITY
 	#include <string>
@@ -30,9 +33,20 @@
 namespace wq {
 namespace core {
 
-// class for handling all strings in wq, with UTF-8 support of course
+// class for handling all strings in wq, with unicode support of course
 class WQ_EXPORT string {
 	public:
+		typedef char value_type;
+		//typedef  reference;
+		//typedef  const_reference;
+		typedef char* iterator;
+		typedef const char* const_iterator;
+		typedef std::reverse_iterator<iterator> reverse_iterator;
+		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+		typedef wq::size_t size_type;
+		typedef wq::ptrdiff_t difference_type;
+		typedef wq::core::allocator<value_type> allocator_type;
+
 
 
 	private:

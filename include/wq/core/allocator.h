@@ -131,7 +131,7 @@ template<class T> T* allocator<T>::copy(const_pointer mem, size_type n, pointer 
 		}
 	}
 	return dest;
-};
+}
 
 template<class T> T* allocator<T>::ocopy(const_pointer mem, size_type n, pointer dest) {
 	if(type_info<value_type>::is_moveable()) {
@@ -149,7 +149,7 @@ template<class T> T* allocator<T>::ocopy(const_pointer mem, size_type n, pointer
 		const_pointer tmp_buff = buffer;
 		const_pointer buff_last = tmp_buff + n;
 		for( ; tmp_buff != buff_last; tmp_buff++, tmp_dest++) {
-			// destination memory must be empty
+			// destination memory must be empty < FIXME: how can it be overlapped them?
 			construct(tmp_dest, *tmp_buff);
 		}
 
@@ -159,7 +159,7 @@ template<class T> T* allocator<T>::ocopy(const_pointer mem, size_type n, pointer
 		deallocate(buffer);
 	}
 	return dest;
-};
+}
 
 }  // namespace core
 }  // namespace wq

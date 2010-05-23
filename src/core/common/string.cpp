@@ -63,8 +63,47 @@ string::string(const char* str) : s_ptr(new shared_data) {
 	s()->m_start = s()->m_alloc.allocate(str_size);
 	s()->m_alloc.copy(str, str_size, s()->m_start);
 	s()->m_last = s()->m_end = s()->m_start + str_size;
+
+	// setting len of str - TODO
+	s()->m_len = chars_count(str, str_size);
 }
 
+
+// private functions
+// function will return number of octets of character at 'c'
+string::size_type string::octets_count(char c) {
+	/*
+	   0000 0000-0000 007F | 0xxxxxxx
+	   0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+	   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+	   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+	*/
+	if( !(c & (1 << 7)) ) {
+		return 1;
+	}
+	else if( c & (1 << 7) && c & (1 << 6) && !(c & (1 << 5)) ) {
+		return 2;
+	}
+	else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && !(c & (1 << 4)) ) {
+		return 3;
+	}
+	return 4;
+}
+
+// function will return number of chars of str
+string::size_type string::chars_count(const char* str, size_type size) {
+	if(size == -1) {
+		size = strlen(str);
+	}
+
+	size_type ret_val = 0;
+	size_type i = 0;
+	while(i < size) {
+		ret_val++;
+		i += octets_count(str[i]);
+	}
+	return ret_val;
+}
 
 }  // namespace core
 }  // namespace wq

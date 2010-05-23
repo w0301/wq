@@ -50,6 +50,10 @@ class WQ_EXPORT string {
 		string();
 		string(const char*);
 
+		// returning things
+		size_type size() const {
+			return s()->m_len;
+		};
 
 		// converting
 		const char* c_str() const {
@@ -69,6 +73,11 @@ class WQ_EXPORT string {
 				size_type m_len;
 				allocator_type m_alloc;
 		};
+
+		// some private helpful functions
+		static size_type octets_count(char);
+		static size_type chars_count(const char*, size_type = -1);
+
 
 	protected:
 		WQ_NEW_SHARED_DATA();

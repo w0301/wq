@@ -24,6 +24,7 @@
 #include "wq/core/shared_ptr.h"
 #include "wq/core/allocator.h"
 #include "wq/core/type_info.h"
+#include "wq/core/string.h"
 
 #include <iostream>
 
@@ -31,90 +32,13 @@ namespace wq {
 	using namespace core;
 }
 
-
-void exception_test() throw(wq::exception) {
-	throw wq::exception();
-}
-
-void atomic_test() throw(wq::exception) {
-	{
-		wq::atomic<int> at(0);
-		int cmp_val = 0;
-		int new_val = 999;
-		std::cout << "comparing " << at.val() << " with " << cmp_val << std::endl;
-		std::cout << "changing val from: " << at.cmp_set(cmp_val, new_val);
-		std::cout << " to: " << at.val() << std::endl;
-		std::cout << at.inc(101) << " + 101 = ";
-		std::cout << at.val() << std::endl;
-
-		std::cout << "old val " << at.set(0);
-		std::cout << " is set to new val - " << at.val() << std::endl;
-	}
-	std::cout << std::endl;
-	{
-		typedef wq::atomic<unsigned long*> atomic_type;
-		atomic_type at(NULL);
-		atomic_type::pointer new_val = new atomic_type::value_type(10);
-
-		std::cout << "old val is: " << at.val() << std::endl;
-		std::cout << "old val is: " << at.set(new_val);
-		std::cout << " and new val is: " << at.val() << std::endl;
-	}
-	std::cout << std::endl;
-	{
-		typedef wq::atomic<int*> atomic_type;
-		atomic_type at(NULL);
-		atomic_type::pointer cmp_val = NULL;
-		atomic_type::pointer new_val = new atomic_type::value_type();
-
-		std::cout << "comparing " << at.val() << " with " << cmp_val << std::endl;
-		std::cout << "setting val from: " << at.cmp_set(cmp_val, new_val);
-		std::cout << " to: " << at.val() << std::endl;
-	}
-	std::cout << std::endl;
-}
-
 int main() {
 	try {
-		atomic_test();
-		WQ_NO_THROW(
-			WQ_NO_THROW(
-				exception_test();
-			);
-			std::cout << "ahoj, ako sa mas!" << std::endl;
-		);
-		exception_test();
+		wq::string str("ahoj ako sa mas");
+		std::cout << str.c_str() << std::endl;
 	}
 	catch(wq::exception& e) {
 	    std::cout << e.what() << std::endl;
     }
-
-	wq::atomic<int> i_atomic;
-	i_atomic += 100;
-	i_atomic -= 101;
-	std::cout << i_atomic << std::endl;
-
-	wq::atomic<int*> ptr_atomic;
-	ptr_atomic.set(new int(123));
-	std::cout << ptr_atomic << std::endl;
-
-	wq::shared_ptr<int> shared(new int(10));
-	{
-		wq::shared_ptr<int> shared2(shared);
-		std::cout << shared2.data_count() << std::endl;
-	}
-	std::cout << shared.data_count() << std::endl;
-	std::cout << *shared << std::endl;
-
-	const char buff[] = "ahoj vole :D!!!";
-
-	wq::allocator<char> al;
-	wq::allocator<char>::pointer mem = al.allocate(sizeof(buff));
-	std::cout << al.ocopy(buff, sizeof(buff), mem) << std::endl;
-	std::cout << mem << std::endl;
-	std::cout << buff << std::endl;
-
-	al.deallocate(mem);
-
 	return 0;
 }

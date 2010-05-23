@@ -145,7 +145,6 @@ template<class T> void shared_ptr<T>::unshare_data() {
 
 // some defines for declaring data for classes
 #define WQ_SHARED_DATA()                                                \
-    protected:                                                          \
         friend class shared_data;                                       \
         shared_data *s() {                                              \
             return static_cast<shared_data*>( s_ptr.data() );           \
@@ -161,7 +160,6 @@ template<class T> void shared_ptr<T>::unshare_data() {
         };
 
 #define WQ_NEW_SHARED_DATA()                    \
-    protected:                                  \
         wq::core::shared_ptr<shared_data> s_ptr;     \
         typedef shared_data base_shared_data;		\
 		WQ_SHARED_DATA();

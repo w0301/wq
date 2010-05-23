@@ -36,8 +36,8 @@ namespace core {
 class WQ_EXPORT string {
 	public:
 		typedef char value_type;
-		//typedef  reference;
-		//typedef  const_reference;
+		//class reference;
+		//class const_reference;
 		typedef char* iterator;
 		typedef const char* const_iterator;
 		typedef std::reverse_iterator<iterator> reverse_iterator;
@@ -46,8 +46,32 @@ class WQ_EXPORT string {
 		typedef wq::ptrdiff_t difference_type;
 		typedef wq::core::allocator<value_type> allocator_type;
 
-	private:
+		// construction
+		string();
+		string(const char*);
 
+
+		// converting
+		const char* c_str() const {
+			return s()->m_start;
+		};
+
+	private:
+		class shared_data {
+			public:
+				shared_data() : m_start(NULL), m_last(NULL), m_end(NULL) { };
+				shared_data(const shared_data&);
+				~shared_data();
+
+				char* m_start;
+				char* m_last;
+				char* m_end;
+				size_type m_len;
+				allocator_type m_alloc;
+		};
+
+	protected:
+		WQ_NEW_SHARED_DATA();
 };
 
 

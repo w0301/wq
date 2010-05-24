@@ -54,6 +54,12 @@ class WQ_EXPORT string {
 		size_type size() const {
 			return s()->m_len;
 		};
+		size_type length() const {
+			return size();
+		};
+		size_type capacity() const {
+			return s()->m_end - s()->m_start;
+		};
 
 		// converting
 		const char* c_str() const {
@@ -63,7 +69,7 @@ class WQ_EXPORT string {
 	private:
 		class shared_data {
 			public:
-				shared_data() : m_start(NULL), m_last(NULL), m_end(NULL) { };
+				shared_data() : m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) { };
 				shared_data(const shared_data&);
 				~shared_data();
 
@@ -77,6 +83,7 @@ class WQ_EXPORT string {
 		// some private helpful functions
 		static size_type octets_count(char);
 		static size_type chars_count(const char*, size_type = -1);
+		void append(const char*, size_type = -1);
 
 
 	protected:

@@ -24,6 +24,7 @@
 #include "wq/core/type_info.h"
 
 #include <cstring>
+#include <cstdlib>
 
 #if WQ_STD_COMPATIBILITY
 	#include <new>
@@ -104,6 +105,7 @@ template<class T> class allocator {
 			}
 			::operator delete(mem);
 		};
+		pointer reallocate(pointer, size_type, size_type);
 
 		void construct(pointer p, const_reference val) {
 			new (static_cast<void*>(p)) value_type(val);
@@ -116,6 +118,27 @@ template<class T> class allocator {
 		pointer copy(const_pointer, size_type, pointer);
 		pointer ocopy(const_pointer, size_type, pointer);
 };
+
+template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_size, size_type new_size) {
+	pointer retval = NULL;
+	if(type_info<value_type>::is_moveable()) {
+		// if type is moveable we can use realloc function
+		retval = static_cast<pointer>( ::realloc(static_cast<void*>(old_ptr),
+									   type_info<value_type>::size() * new_size) );
+	}
+	else {
+		// else we must write own algorithm
+		retval = allocate(new_size);
+		if(old_ptr != NULL) {
+			copy(old_ptr, (old_size > new_size ? new_size : old_size), retval);
+			for(pointer i = old_ptr; i != old_ptr + old_size; i++) {
+				destroy(i);
+			}
+			deallocate(old_ptr);
+		}
+	}
+	return retval;
+}
 
 template<class T> T* allocator<T>::copy(const_pointer mem, size_type n, pointer dest) {
 	if(type_info<value_type>::is_moveable()) {
@@ -130,7 +153,7 @@ template<class T> T* allocator<T>::copy(const_pointer mem, size_type n, pointer 
 			construct(tmp_dest, *mem);
 		}
 	}
-	return dest;
+	return dest + n;
 }
 
 template<class T> T* allocator<T>::ocopy(const_pointer mem, size_type n, pointer dest) {
@@ -158,7 +181,7 @@ template<class T> T* allocator<T>::ocopy(const_pointer mem, size_type n, pointer
 		}
 		deallocate(buffer);
 	}
-	return dest;
+	return dest + n;
 }
 
 }  // namespace core

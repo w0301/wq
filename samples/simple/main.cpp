@@ -34,9 +34,10 @@ namespace wq {
 
 int main() {
 	try {
-		wq::string str("Русский");
+		wq::string str("ahóooooooj ako sa máš!!!");
 		std::cout << str.c_str() << std::endl;
-		std::cout << str.size() << std::endl;
+		std::cout << "size: " << str.size() << std::endl;
+		std::cout << "capacity: " << str.capacity() << std::endl;
 	}
 	catch(wq::exception& e) {
 	    std::cout << e.what() << std::endl;

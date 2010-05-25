@@ -120,6 +120,7 @@ template<> class type_info<void> {
 }  // namespace wq
 
 // moving is allowed for all standard types
+WQ_MOVEABLE_TYPE(char);
 WQ_MOVEABLE_TYPE(signed char);
 WQ_MOVEABLE_TYPE(unsigned char);
 

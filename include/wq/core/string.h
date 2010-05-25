@@ -35,22 +35,43 @@ namespace core {
 // class for handling all strings in wq, with unicode support of course
 class WQ_EXPORT string {
 	public:
-		typedef char value_type;
-		//class reference;
-		//class const_reference;
+		// class which points to one character of utf8 string
+		class value_type {
+			public:
+				value_type() : m_ptr(NULL), m_owner(NULL) { };
+				value_type(const char*);
+				value_type(char*, string*);
+
+				~value_type();
+
+			private:
+				// pointer to first byte of utf8 character
+				char* m_ptr;
+
+				// pointer to owner of character above
+				string* m_owner;
+		};
+		friend class value_type;
+
+		typedef value_type reference;
+		typedef const reference const_reference;
 		typedef char* iterator;
 		typedef const char* const_iterator;
 		typedef std::reverse_iterator<iterator> reverse_iterator;
 		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-		typedef wq::size_t size_type;
-		typedef wq::ptrdiff_t difference_type;
-		typedef wq::core::allocator<value_type> allocator_type;
+		typedef wq::core::allocator<char> allocator_type;
+		typedef allocator_type::size_type size_type;
+		typedef allocator_type::difference_type difference_type;
 
 		// construction
 		string();
 		string(const char*);
+		string(const string&);
 
-		// returning things
+		// manipulating with contents
+		void clear();
+
+		// size, capacity etc.
 		size_type size() const {
 			return s()->m_len;
 		};
@@ -60,10 +81,19 @@ class WQ_EXPORT string {
 		size_type capacity() const {
 			return s()->m_end - s()->m_start;
 		};
+		size_type max_size() const {
+			return s()->m_alloc.max_size();
+		};
+		bool empty() const {
+			return size() == 0;
+		};
 
 		// converting
 		const char* c_str() const {
-			return s()->m_start;
+			return s()->m_start == NULL ? "" : s()->m_start;
+		};
+		const char* utf8_str() const {
+			return s()->m_start == NULL ? "" : s()->m_start;
 		};
 
 	private:
@@ -83,7 +113,9 @@ class WQ_EXPORT string {
 		// some private helpful functions
 		static size_type octets_count(char);
 		static size_type chars_count(const char*, size_type = -1);
-		void append(const char*, size_type = -1);
+		void lowl_append(const char*, size_type = -1);
+		void lowl_assign(const char*, size_type = -1);
+		void lowl_insert(char*, const char*, size_type = -1);
 
 
 	protected:

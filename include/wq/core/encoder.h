@@ -16,33 +16,25 @@
 **
 ****************************************************************************/
 
-#include "wq/defs.h"
-#include "wq/core/vector.h"
-#include "wq/core/list.h"
-#include "wq/core/atomic.h"
-#include "wq/core/exception.h"
-#include "wq/core/shared_ptr.h"
-#include "wq/core/allocator.h"
-#include "wq/core/type_info.h"
-#include "wq/core/string.h"
+#ifndef WQ_ENCODER_H
+#define WQ_ENCODER_H
 
-#include <iostream>
+#include "wq/defs.h"
+#include "wq/core/exception.h"
 
 namespace wq {
-	using namespace core;
-}
+namespace core {
 
-int main() {
-	try {
-		wq::string str("ahóooooooj ako sa máš!!!");
-		wq::string str2 = str;
-		std::cout << str.c_str() << std::endl;
-		std::cout << str2.c_str() << std::endl;
-		std::cout << str.size() << std::endl;
-		std::cout << str2.size() << std::endl;
-	}
-	catch(wq::exception& e) {
-	    std::cout << e.what() << std::endl;
-    }
-	return 0;
-}
+// exception that indicates error during encoding
+class encode_error : public wq::core::exception {
+	public:
+		encode_error() throw();
+		const char* what() const throw();
+};
+
+
+}  // namespace core
+}  // namespace wq
+
+
+#endif  // WQ_ENCODER_H

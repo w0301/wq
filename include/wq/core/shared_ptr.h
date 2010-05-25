@@ -138,7 +138,7 @@ template<class T> void shared_ptr<T>::unset_data() {
 template<class T> void shared_ptr<T>::unshare_data() {
 	if(is_ok() && data_count() > 1) {
 		// we have to copy existing data and set them to shared_ptr
-		pointer new_data = new data_type( *m_ptr->val() );
+		pointer new_data = new data_type( *( (*m_ptr).val() ) );
 		set_data(new_data);
 	}
 }

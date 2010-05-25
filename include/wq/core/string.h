@@ -114,8 +114,10 @@ class WQ_EXPORT string {
 		static size_type octets_count(char);
 		static size_type chars_count(const char*, size_type = -1);
 		void lowl_append(const char*, size_type = -1);
+		void lowl_append(char, size_type);
 		void lowl_assign(const char*, size_type = -1);
 		void lowl_insert(char*, const char*, size_type = -1);
+		void lowl_insert(char*, char, size_type);
 
 
 	protected:

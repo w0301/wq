@@ -32,7 +32,7 @@ namespace core {
 	utf8 character. If \a c is not good encoded exception
 	wq::core::encode_error is thrown.
 
-	\param c Pointer to sequence of bytes of utf8 encoded character.
+	\param c Pointer to first byte of utf8 encoded character sequence.
 */
 string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL) {
 	if(string::octets_count(c[0]) != 0) {
@@ -199,6 +199,16 @@ void string::lowl_append(const char* str, size_type str_size) {
 	s()->m_len += chars_count(str, str_size);
 }
 
+// this function appends 'count' 'c' characters at the end
+void string::lowl_append(char c, size_type count) {
+	char* buff = new char[count];
+	for(size_type i = 0; i != count; i++) {
+		buff[i] = c;
+	}
+	lowl_append(buff, count);
+	delete []buff;
+}
+
 // this function delete string contents and assign new one
 void string::lowl_assign(const char* str, size_type str_size) {
 	clear();
@@ -210,24 +220,27 @@ void string::lowl_insert(char* at, const char* str, size_type str_size) {
 	if(str_size == -1) {
 		str_size = strlen(str);
 	}
-	size_type old_size = s()->m_last - s()->m_start;
-	size_type new_size = old_size == 0 ? str_size : (old_size * 2 >= old_size + str_size ?
-													 old_size * 2 : old_size + str_size);
-	// reallocating memory to assure enough space + assure validity of 'at'
+
+	// appending 'str_size' zero characters + assure validity of 'at'
 	difference_type dist = at - s()->m_start;
-	s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_size, new_size);
-	s()->m_end = s()->m_start + new_size;
-	s()->m_last = s()->m_start + old_size;
+	lowl_append('\0', str_size);
 	at = s()->m_start + dist;
 
-	// copying data to right / TODO: add function for moving to right to allocator
+	// copying data to right
 	s()->m_last = s()->m_alloc.ocopy(at, s()->m_last - at, at + str_size);
 
 	// copying new data to right place
 	s()->m_alloc.copy(str, str_size, at);
+}
 
-	// we should change length variable
-	s()->m_len += chars_count(str, str_size);
+// inserting 'count' 'c' characters at 'at'
+void string::lowl_insert(char* at, char c, size_type count) {
+	char* buff = new char[count];
+	for(size_type i = 0; i != count; i++) {
+		buff[i] = c;
+	}
+	lowl_insert(at, buff, count);
+	delete []buff;
 }
 
 }  // namespace core

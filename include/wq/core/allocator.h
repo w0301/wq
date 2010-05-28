@@ -115,8 +115,8 @@ template<class T> class allocator {
 		};
 
 		// operating with memory
-		pointer copy(const_pointer, size_type, pointer);
-		pointer ocopy(const_pointer, size_type, pointer);
+		pointer copy(pointer, const_pointer, size_type);
+		pointer ocopy(pointer, const_pointer, size_type);
 };
 
 template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_size, size_type new_size) {
@@ -130,7 +130,7 @@ template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_siz
 		// else we must write own algorithm
 		retval = allocate(new_size);
 		if(old_ptr != NULL) {
-			copy(old_ptr, (old_size > new_size ? new_size : old_size), retval);
+			copy(retval, old_ptr, (old_size > new_size ? new_size : old_size));
 			for(pointer i = old_ptr; i != old_ptr + old_size; i++) {
 				destroy(i);
 			}
@@ -140,7 +140,7 @@ template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_siz
 	return retval;
 }
 
-template<class T> T* allocator<T>::copy(const_pointer mem, size_type n, pointer dest) {
+template<class T> T* allocator<T>::copy(pointer dest, const_pointer mem, size_type n) {
 	if(type_info<value_type>::is_moveable()) {
 		// this is not overlap safe copying
 		memcpy(static_cast<void*>(dest), static_cast<const void*>(mem), n);
@@ -156,7 +156,7 @@ template<class T> T* allocator<T>::copy(const_pointer mem, size_type n, pointer 
 	return dest + n;
 }
 
-template<class T> T* allocator<T>::ocopy(const_pointer mem, size_type n, pointer dest) {
+template<class T> T* allocator<T>::ocopy(pointer dest, const_pointer mem, size_type n) {
 	if(type_info<value_type>::is_moveable()) {
 		// overlap safe copying
 		memmove(static_cast<void*>(dest), static_cast<const void*>(mem), n);

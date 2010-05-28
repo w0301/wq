@@ -81,6 +81,9 @@ class WQ_EXPORT string {
 		size_type capacity() const {
 			return s()->m_end - s()->m_start;
 		};
+		size_type bytes() const {
+			return s()->m_last - s()->m_start;
+		};
 		size_type max_size() const {
 			return s()->m_alloc.max_size();
 		};
@@ -88,7 +91,7 @@ class WQ_EXPORT string {
 			return size() == 0;
 		};
 
-		// converting
+		// converting - TODO: need of temporally buffer - '\0' is needed
 		const char* c_str() const {
 			return s()->m_start == NULL ? "" : s()->m_start;
 		};
@@ -113,12 +116,14 @@ class WQ_EXPORT string {
 		// some private helpful functions
 		static size_type octets_count(char);
 		static size_type chars_count(const char*, size_type = -1);
+		void lowl_realloc(size_type);
 		void lowl_append(const char*, size_type = -1);
 		void lowl_append(char, size_type);
 		void lowl_assign(const char*, size_type = -1);
 		void lowl_insert(char*, const char*, size_type = -1);
 		void lowl_insert(char*, char, size_type);
-
+		void lowl_erase(char*, char*);
+		void lowl_replace(char*, char*, const char*, size_type = -1);
 
 	protected:
 		WQ_NEW_SHARED_DATA();

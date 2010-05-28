@@ -39,7 +39,7 @@ string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL) {
 		allocator_type alloc;
 		size_type clen = strlen(c);
 		m_ptr = alloc.allocate(clen);
-		alloc.copy(c, clen, m_ptr);
+		alloc.copy(m_ptr, c, clen);
 	}
 	else {
 		throw encode_error();
@@ -85,7 +85,7 @@ string::shared_data::shared_data(const shared_data& from) :
 		m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) {
 	size_type size = from.m_last - from.m_start;
 	char* start = m_alloc.allocate(size);
-	m_alloc.copy(from.m_start, size, start);
+	m_alloc.copy(start, from.m_start, size);
 
 	m_start = start;
 	m_last = m_start + size;
@@ -181,19 +181,28 @@ string::size_type string::chars_count(const char* str, size_type size) {
 	return ret_val;
 }
 
+// this function realloc string by realloc algorithm + ensure 'size' bytes are free
+void string::lowl_realloc(size_type size) {
+	// resize only if it is needed
+	size_type old_capacity = s()->m_end - s()->m_start;
+	size_type old_size = s()->m_last - s()->m_start;
+	if(old_capacity < old_size + size) {
+		size_type new_capacity = old_capacity == 0 ? size :
+								(old_capacity * 2 >= old_size + size ?
+								 old_capacity * 2 : old_size + size);
+		s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, new_capacity);
+		s()->m_end = s()->m_start + new_capacity;
+		s()->m_last = s()->m_start + old_size;
+	}
+}
+
 // this function appends new utf8 chars to string
 void string::lowl_append(const char* str, size_type str_size) {
 	if(str_size == -1) {
 		str_size = strlen(str);
 	}
-	size_type old_size = s()->m_last - s()->m_start;
-	size_type new_size = old_size == 0 ? str_size : (old_size * 2 >= old_size + str_size ?
-													 old_size * 2 : old_size + str_size);
-
-	s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_size, new_size);
-	s()->m_end = s()->m_start + new_size;
-	s()->m_last = s()->m_start + old_size;
-	s()->m_last = s()->m_alloc.copy(str, str_size, s()->m_last);
+	lowl_realloc(str_size);
+	s()->m_last = s()->m_alloc.copy(s()->m_last, str, str_size);
 
 	// adding to len of string
 	s()->m_len += chars_count(str, str_size);
@@ -209,7 +218,7 @@ void string::lowl_append(char c, size_type count) {
 	delete []buff;
 }
 
-// this function delete string contents and assign new one
+// this function delete string contents and assign the new one
 void string::lowl_assign(const char* str, size_type str_size) {
 	clear();
 	lowl_append(str, str_size);
@@ -223,17 +232,17 @@ void string::lowl_insert(char* at, const char* str, size_type str_size) {
 
 	// appending 'str_size' zero characters + assure validity of 'at'
 	difference_type dist = at - s()->m_start;
-	lowl_append('\0', str_size);
+	lowl_realloc(str_size);
 	at = s()->m_start + dist;
 
 	// copying data to right
-	s()->m_last = s()->m_alloc.ocopy(at, s()->m_last - at, at + str_size);
+	s()->m_last = s()->m_alloc.ocopy(at + str_size, at, s()->m_last - at);
 
 	// copying new data to right place
-	s()->m_alloc.copy(str, str_size, at);
+	s()->m_alloc.copy(at, str, str_size);
 }
 
-// inserting 'count' 'c' characters at 'at'
+// inserts 'count' 'c' characters at 'at'
 void string::lowl_insert(char* at, char c, size_type count) {
 	char* buff = new char[count];
 	for(size_type i = 0; i != count; i++) {
@@ -241,6 +250,36 @@ void string::lowl_insert(char* at, char c, size_type count) {
 	}
 	lowl_insert(at, buff, count);
 	delete []buff;
+}
+
+// delete characters between two pointers that points to bytes in string
+void string::lowl_erase(char* first, char* last) {
+	if(first == NULL || last == NULL) {
+		return;
+	}
+	// rewriting deleted data
+	s()->m_last = s()->m_alloc.ocopy(first, last, s()->m_last - last);
+}
+
+// replace bytes between 'first' and 'last' with str
+void string::lowl_replace(char* first, char* last, const char* str, size_type str_size) {
+	if(str_size == -1) {
+		str_size = strlen(str);
+	}
+	size_type rep_size = last - first;
+
+	// the most obvious way to do that - I am lazy to make it shorter :)
+	if(rep_size == str_size) {
+		s()->m_alloc.copy(first, str, rep_size);
+	}
+	else if(rep_size < str_size) {
+		s()->m_alloc.copy(first, str, rep_size);
+		lowl_insert(first + rep_size, str + rep_size, str_size - rep_size);
+	}
+	else if(rep_size > str_size) {
+		first = s()->m_alloc.copy(first, str, str_size);
+		lowl_erase(first, first + (rep_size - str_size));
+	}
 }
 
 }  // namespace core

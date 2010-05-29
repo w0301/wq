@@ -34,7 +34,7 @@ namespace wq {
 
 int main() {
 	try {
-		wq::string str("abcdefghijklmn");
+		wq::string str("ľščťžýáíé");
 		wq::string str2 = str;
 		std::cout << str.c_str() << std::endl;
 		std::cout << str2.c_str() << std::endl;
@@ -43,8 +43,8 @@ int main() {
 
 		for(wq::string::size_type i = 0; i != str.size(); i++) {
 			wq::string::reference ref = str.at(i);
+			std::cout << ref.c_str() << " -- " << ref.next().c_str() << std::endl;
 			ref = "ž";
-			std::cout << ref.c_str() << std::endl;
 		}
 		std::cout << str.c_str() << std::endl;
 		std::cout << str.size() << " -- " << str.bytes() << std::endl;

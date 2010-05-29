@@ -35,8 +35,13 @@ namespace core {
 // class for handling all strings in wq, with unicode support of course
 class WQ_EXPORT string {
 	public:
+		//! Type of allocator used for string objects.
 		typedef wq::core::allocator<char> allocator_type;
+
+		//! Type which handle indexes etc. in string objects.
 		typedef allocator_type::size_type size_type;
+
+		//! Type which describe result of math operations over iterators.
 		typedef allocator_type::difference_type difference_type;
 
 		// class which points to one character of utf8 string
@@ -44,7 +49,7 @@ class WQ_EXPORT string {
 			public:
 				// construction
 				value_type() : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) { };
-				value_type(const value_type& from) : m_ptr(from.m_ptr), m_owner(from.m_owner), m_tempbuff(NULL) { };
+				value_type(const value_type&);
 				value_type(const char*);
 				value_type(string*, char*);
 				value_type(const string*, char*);
@@ -52,9 +57,13 @@ class WQ_EXPORT string {
 				// destruction
 				~value_type();
 
+				// count of bytes of character
 				size_type bytes() const {
 					return m_owner == NULL ? strlen(m_ptr) : octets_count(m_ptr, m_owner->s()->m_last - m_ptr);
 				};
+
+				// next character in string
+				value_type next() const;
 
 				// assignment
 				value_type& operator= (const value_type&);
@@ -76,11 +85,22 @@ class WQ_EXPORT string {
 		};
 		friend class value_type;
 
+		//! Reference type for class.
 		typedef value_type reference;
+
+		//! Constant reference type for class.
 		typedef const reference const_reference;
+
+		//! Iterator type.
 		typedef char* iterator;
+
+		//! Constant iterator type.
 		typedef const char* const_iterator;
+
+		//! Reverse iterator type.
 		typedef std::reverse_iterator<iterator> reverse_iterator;
+
+		//! Constant reverse iterator type.
 		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 		// construction
@@ -117,6 +137,12 @@ class WQ_EXPORT string {
 		// characters returning
 		reference at(size_type);
 		const_reference at(size_type) const;
+		reference operator[] (size_type i) {
+			return at(i);
+		};
+		const_reference operator[] (size_type i) const {
+			return at(i);
+		};
 
 		// converting
 		const char* utf8_str() const;

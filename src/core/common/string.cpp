@@ -26,6 +26,51 @@ namespace core {
 
 // string::value_type class
 /*!
+	\class string::value_type
+	\brief UTF-8 character handler.
+
+	This class is used to point to existing character
+	in any wq::core::string object ("reference object") or
+	to just keep UTF-8 formated character ("normal object").
+
+	\sa string
+*/
+
+/*!
+	\fn string::value_type::value_type()
+	\brief Default constructor.
+
+	Creates empty object that must be initialized
+	by assign operators.
+
+	\sa operator=()
+*/
+
+/*!
+	\brief Copy constructor.
+
+	This constructor creates exact copy of \a from object.
+
+	\sa value_type(), operator=(const value_type&)
+*/
+string::value_type::value_type(const value_type& from) :
+		m_ptr(NULL), m_owner(from.m_owner), m_tempbuff(NULL) {
+	if(m_owner != NULL) {
+		m_ptr = from.m_ptr;
+	}
+	else {
+		allocator_type alloc;
+		if(m_ptr != NULL) {
+			alloc.deallocate(m_ptr);
+		}
+		size_type clen = from.bytes();
+		m_ptr = alloc.allocate(clen + 1);
+		alloc.copy(m_ptr, from.m_ptr, clen);
+		alloc.construct(m_ptr + clen, '\0');
+	}
+}
+
+/*!
 	\brief Basic construction.
 
 	This constructor constructs "normal object" which holds
@@ -64,6 +109,13 @@ string::value_type::value_type(string* owner, char* c) : m_ptr(c), m_owner(owner
 	}
 }
 
+/*!
+	\brief  Construction with constant owner.
+
+	Just like value_type(string*, char*) but with 'const_cast' used.
+
+	\sa value_type(string*, char*)
+*/
 string::value_type::value_type(const string* owner, char* c) :
 		m_ptr(c), m_owner(const_cast<string*>(owner)), m_tempbuff(NULL) {
 	if(bytes() == 0) {
@@ -91,14 +143,64 @@ string::value_type::~value_type() {
 	}
 }
 
+/*!
+	\fn string::value_type::bytes() const
+	\brief Length of character.
+
+	Function returns number of bytes in character
+	handled by object.
+*/
+
+/*!
+	\brief Next character.
+
+	Function returns next character in string. If object
+	is not "reference object" or there is no character
+	character \b '\0' is returned.
+*/
+string::value_type string::value_type::next() const {
+	value_type ret("\0");
+	if(m_owner != NULL && m_ptr + bytes() != m_owner->s()->m_last) {
+		ret = *this;
+		ret.m_ptr += ret.bytes();
+	}
+	return ret;
+}
+
+/*!
+	\brief Assign operator.
+
+	This operator copy \a r object to \a this object.
+
+	\sa operator= (const char*)
+*/
 string::value_type& string::value_type::operator= (const value_type& r) {
 	if(this != &r) {
 		m_owner = r.m_owner;
-		m_ptr = r.m_ptr;
+		if(m_owner != NULL) {
+			m_ptr = r.m_ptr;
+		}
+		else {
+			allocator_type alloc;
+			if(m_ptr != NULL) {
+				alloc.deallocate(m_ptr);
+			}
+			size_type clen = r.bytes();
+			m_ptr = alloc.allocate(clen + 1);
+			alloc.copy(m_ptr, r.m_ptr, clen);
+			alloc.construct(m_ptr + clen, '\0');
+		}
 	}
 	return *this;
 }
 
+/*!
+	\brief Assign operator.
+
+	This assign operator assign \a c character to \a this object.
+	If \a this object is of "reference type" string's character is also
+	changed.
+*/
 string::value_type& string::value_type::operator= (const char* c) {
 	if(m_owner == NULL) {
 		allocator_type alloc;
@@ -122,6 +224,14 @@ string::value_type& string::value_type::operator= (const char* c) {
 	return *this;
 }
 
+/*!
+	\brief Converts to C string.
+
+	This function converts character to sequence
+	of char-s (bytes) and return a pointer to sequence.
+
+	\sa operator char()
+*/
 const char* string::value_type::c_str() const {
 	if(m_owner != NULL) {
 		allocator_type alloc;
@@ -138,6 +248,17 @@ const char* string::value_type::c_str() const {
 	return m_ptr;
 }
 
+/*!
+	\brief Implicit conversion to char.
+
+	This operator allows implicit conversion to
+	\a char type, however if character has more
+	than 1 byte character \b '?' is returned and no
+	exception is thrown. To handle all unicode characters
+	use c_str() function.
+
+	\sa c_str()
+*/
 string::value_type::operator char() const {
 	if(bytes() == 1) {
 		return *m_ptr;
@@ -164,6 +285,7 @@ string::shared_data::~shared_data() {
 		m_alloc.deallocate(m_start);
 	}
 }
+
 
 // string class
 /*!
@@ -195,6 +317,11 @@ string::string(const string& other) : m_tempbuff(NULL), s_ptr(other.s_ptr) {
 
 }
 
+/*!
+	\brief Destruction of string.
+
+	Destructor delete all data created by string object.
+*/
 string::~string() {
 	if(m_tempbuff != NULL) {
 		s()->m_alloc.deallocate(m_tempbuff);
@@ -213,6 +340,16 @@ void string::clear() {
 	}
 }
 
+/*!
+	\brief Returns character.
+
+	This function returns character of string at index \a i.
+	Character is returned in form of reference and can be manipulate
+	by all functions in class value_type. If there is no character
+	at index \a i exception wq::core::out_of_range is thrown.
+
+	\sa operator[](), at(size_type) const;
+*/
 string::reference string::at(size_type i) {
 	if(i > size()) {
 		throw out_of_range();
@@ -226,6 +363,14 @@ string::reference string::at(size_type i) {
 	return reference(this, first_byte);
 }
 
+/*!
+	\brief Returns character.
+
+	This constant form of at(size_type) function. However
+	only constant operations are allowed on returned value.
+
+	\sa operator[](), at(size_type)
+*/
 string::const_reference string::at(size_type i) const {
 	if(i > size()) {
 		throw out_of_range();
@@ -239,6 +384,15 @@ string::const_reference string::at(size_type i) const {
 	return reference(this, first_byte);
 }
 
+/*!
+	\brief Convert string.
+
+	Returns utf8 null terminated string. Returned string
+	is valid until next *_str() function call or until
+	destruction if \a this object.
+
+	\sa c_str()
+*/
 const char* string::utf8_str() const {
 	if(m_tempbuff != NULL) {
 		s()->m_alloc.deallocate(m_tempbuff);
@@ -249,6 +403,16 @@ const char* string::utf8_str() const {
 
 	return m_tempbuff;
 }
+
+/*!
+	\fn string::c_str() const
+	\brief Convert string.
+
+	For now this is same as utf8_str() functions.
+
+	\sa utf8_str()
+*/
+
 // private functions
 // function will return number of octets of utf8 character 'c'
 string::size_type string::octets_count(const char* arr, size_type size) {
@@ -279,7 +443,6 @@ string::size_type string::octets_count(const char* arr, size_type size) {
 	return 1;
 }
 
-
 // function will return number of chars of 'str'
 string::size_type string::chars_count(const char* str, size_type size) {
 	if(size == -1) {
@@ -293,7 +456,6 @@ string::size_type string::chars_count(const char* str, size_type size) {
 	}
 	return ret_val;
 }
-
 
 // this function realloc string by realloc algorithm + ensure 'size' bytes are free
 void string::lowl_realloc(size_type size) {
@@ -309,7 +471,6 @@ void string::lowl_realloc(size_type size) {
 		s()->m_last = s()->m_start + old_size;
 	}
 }
-
 
 // this function appends new utf8 chars to string
 string::size_type string::lowl_append(const char* str, size_type str_size) {

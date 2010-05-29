@@ -34,12 +34,13 @@ namespace core {
 
 	\param c Pointer to first byte of utf8 encoded character sequence.
 */
-string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL) {
-	if(string::octets_count(c[0]) != 0) {
+string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) {
+	size_type clen = strlen(c);
+	if(string::octets_count(c, clen) != 0) {
 		allocator_type alloc;
-		size_type clen = strlen(c);
-		m_ptr = alloc.allocate(clen);
+		m_ptr = alloc.allocate(clen + 1);
 		alloc.copy(m_ptr, c, clen);
+		alloc.construct(m_ptr + clen, '\0');
 	}
 	else {
 		throw encode_error();
@@ -57,8 +58,15 @@ string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL) {
 	in string's range.
 	\param owner Pointer to string object which owns \a c.
 */
-string::value_type::value_type(char* c, string* owner) : m_ptr(c), m_owner(owner) {
-	if(string::octets_count(c[0]) == 0) {
+string::value_type::value_type(string* owner, char* c) : m_ptr(c), m_owner(owner), m_tempbuff(NULL) {
+	if(bytes() == 0) {
+		throw encode_error();
+	}
+}
+
+string::value_type::value_type(const string* owner, char* c) :
+		m_ptr(c), m_owner(const_cast<string*>(owner)), m_tempbuff(NULL) {
+	if(bytes() == 0) {
 		throw encode_error();
 	}
 }
@@ -74,10 +82,67 @@ string::value_type::value_type(char* c, string* owner) : m_ptr(c), m_owner(owner
 	in wq::core::string by '=' operator.
 */
 string::value_type::~value_type() {
+	allocator_type alloc;
+	if(m_owner == NULL && m_ptr != NULL) {
+		alloc.deallocate(m_ptr);
+	}
+	if(m_tempbuff != NULL) {
+		alloc.deallocate(m_tempbuff);
+	}
+}
+
+string::value_type& string::value_type::operator= (const value_type& r) {
+	if(this != &r) {
+		m_owner = r.m_owner;
+		m_ptr = r.m_ptr;
+	}
+	return *this;
+}
+
+string::value_type& string::value_type::operator= (const char* c) {
 	if(m_owner == NULL) {
 		allocator_type alloc;
 		alloc.deallocate(m_ptr);
+		size_type clen = strlen(c);
+		if(string::octets_count(c, clen) != 0) {
+			m_ptr = alloc.allocate(clen + 1);
+			alloc.copy(m_ptr, c, clen);
+			alloc.construct(m_ptr + clen, '\0');
+		}
+		else {
+			throw encode_error();
+		}
 	}
+	else {
+		// replacing + assure m_ptr validity
+		difference_type dist = m_ptr - m_owner->s()->m_start;
+		m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + octets_count(m_ptr, bytes()), c);
+		m_ptr = m_owner->s()->m_start + dist;
+	}
+	return *this;
+}
+
+const char* string::value_type::c_str() const {
+	if(m_owner != NULL) {
+		allocator_type alloc;
+		if(m_tempbuff != NULL) {
+			alloc.deallocate(m_tempbuff);
+		}
+		size_type clen = bytes();
+		m_tempbuff = alloc.allocate(clen + 1);
+		alloc.copy(m_tempbuff, m_ptr, clen);
+		alloc.construct(m_tempbuff + clen, '\0');
+
+		return m_tempbuff;
+	}
+	return m_ptr;
+}
+
+string::value_type::operator char() const {
+	if(bytes() == 1) {
+		return *m_ptr;
+	}
+	return '?';
 }
 
 // string::shared_data class
@@ -148,6 +213,32 @@ void string::clear() {
 	}
 }
 
+string::reference string::at(size_type i) {
+	if(i > size()) {
+		throw out_of_range();
+	}
+	// finding first byte of char
+	char* first_byte = s()->m_start;
+	while(i != 0) {
+		first_byte += octets_count(first_byte, s()->m_last - first_byte);
+		i--;
+	}
+	return reference(this, first_byte);
+}
+
+string::const_reference string::at(size_type i) const {
+	if(i > size()) {
+		throw out_of_range();
+	}
+	// finding first byte of char
+	char* first_byte = s()->m_start;
+	while(i != 0) {
+		first_byte += octets_count(first_byte, s()->m_last - first_byte);
+		i--;
+	}
+	return reference(this, first_byte);
+}
+
 const char* string::utf8_str() const {
 	if(m_tempbuff != NULL) {
 		s()->m_alloc.deallocate(m_tempbuff);
@@ -160,7 +251,7 @@ const char* string::utf8_str() const {
 }
 // private functions
 // function will return number of octets of utf8 character 'c'
-string::size_type string::octets_count(char c) {
+string::size_type string::octets_count(const char* arr, size_type size) {
 	/*
 	   octets specifications:
 	   0000 0000-0000 007F | 0xxxxxxx
@@ -168,20 +259,26 @@ string::size_type string::octets_count(char c) {
 	   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
 	   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 	*/
-	if( !(c & (1 << 7)) ) {
-		return 1;
+	char c = *arr;
+	char c2 = size > 1 ? arr[1] : '\0';
+	if(c2 != '\0') {
+		if( !(c & (1 << 7)) ) {
+			return 1;
+		}
+		else if( c & (1 << 7) && c & (1 << 6) && !(c & (1 << 5)) ) {
+			return 2;
+		}
+		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && !(c & (1 << 4)) ) {
+			return 3;
+		}
+		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && c & (1 << 4) && !(c & (1 << 5)) ) {
+			return 4;
+		}
+		return 0;
 	}
-	else if( c & (1 << 7) && c & (1 << 6) && !(c & (1 << 5)) ) {
-		return 2;
-	}
-	else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && !(c & (1 << 4)) ) {
-		return 3;
-	}
-	else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && c & (1 << 4) && !(c & (1 << 5)) ) {
-		return 4;
-	}
-	return 0;
+	return 1;
 }
+
 
 // function will return number of chars of 'str'
 string::size_type string::chars_count(const char* str, size_type size) {
@@ -192,10 +289,11 @@ string::size_type string::chars_count(const char* str, size_type size) {
 	size_type i = 0;
 	while(i < size) {
 		ret_val++;
-		i += octets_count(str[i]);
+		i += octets_count(str, size - i);
 	}
 	return ret_val;
 }
+
 
 // this function realloc string by realloc algorithm + ensure 'size' bytes are free
 void string::lowl_realloc(size_type size) {
@@ -211,6 +309,7 @@ void string::lowl_realloc(size_type size) {
 		s()->m_last = s()->m_start + old_size;
 	}
 }
+
 
 // this function appends new utf8 chars to string
 string::size_type string::lowl_append(const char* str, size_type str_size) {

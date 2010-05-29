@@ -35,14 +35,34 @@ namespace core {
 // class for handling all strings in wq, with unicode support of course
 class WQ_EXPORT string {
 	public:
+		typedef wq::core::allocator<char> allocator_type;
+		typedef allocator_type::size_type size_type;
+		typedef allocator_type::difference_type difference_type;
+
 		// class which points to one character of utf8 string
 		class value_type {
 			public:
-				value_type() : m_ptr(NULL), m_owner(NULL) { };
+				// construction
+				value_type() : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) { };
+				value_type(const value_type& from) : m_ptr(from.m_ptr), m_owner(from.m_owner), m_tempbuff(NULL) { };
 				value_type(const char*);
-				value_type(char*, string*);
+				value_type(string*, char*);
+				value_type(const string*, char*);
 
+				// destruction
 				~value_type();
+
+				size_type bytes() const {
+					return m_owner == NULL ? strlen(m_ptr) : octets_count(m_ptr, m_owner->s()->m_last - m_ptr);
+				};
+
+				// assignment
+				value_type& operator= (const value_type&);
+				value_type& operator= (const char*);
+
+				// conversion
+				const char* c_str() const;
+				operator char() const;
 
 			private:
 				// pointer to first byte of utf8 character
@@ -50,6 +70,9 @@ class WQ_EXPORT string {
 
 				// pointer to owner of character above
 				string* m_owner;
+
+				// temporary buffer for convert functions
+				mutable char* m_tempbuff;
 		};
 		friend class value_type;
 
@@ -59,9 +82,6 @@ class WQ_EXPORT string {
 		typedef const char* const_iterator;
 		typedef std::reverse_iterator<iterator> reverse_iterator;
 		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-		typedef wq::core::allocator<char> allocator_type;
-		typedef allocator_type::size_type size_type;
-		typedef allocator_type::difference_type difference_type;
 
 		// construction
 		string();
@@ -94,6 +114,10 @@ class WQ_EXPORT string {
 			return size() == 0;
 		};
 
+		// characters returning
+		reference at(size_type);
+		const_reference at(size_type) const;
+
 		// converting
 		const char* utf8_str() const;
 		const char* c_str() const {
@@ -115,7 +139,7 @@ class WQ_EXPORT string {
 		};
 
 		// some private helpful functions
-		static size_type octets_count(char);
+		static size_type octets_count(const char*, size_type);
 		static size_type chars_count(const char*, size_type = -1);
 
 		// low level functions - these functions do not touch

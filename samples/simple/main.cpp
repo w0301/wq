@@ -40,6 +40,14 @@ int main() {
 		std::cout << str2.c_str() << std::endl;
 		std::cout << str.size() << " -- " << str.bytes() << std::endl;
 		std::cout << str2.size() << " -- " << str2.bytes()<< std::endl;
+
+		for(wq::string::size_type i = 0; i != str.size(); i++) {
+			wq::string::reference ref = str.at(i);
+			ref = "ž";
+			std::cout << ref.c_str() << std::endl;
+		}
+		std::cout << str.c_str() << std::endl;
+		std::cout << str.size() << " -- " << str.bytes() << std::endl;
 	}
 	catch(wq::exception& e) {
 	    std::cout << e.what() << std::endl;

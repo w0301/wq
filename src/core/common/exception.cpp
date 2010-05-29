@@ -68,10 +68,53 @@ exception::~exception() throw() {
 	This function returns description string for exception.
 	It's suppose to be overridden in derived classes, to return
 	right description string. Without overriding it returns
-	string "Unspecified exception occurred.".
+	string "unspecified exception".
 */
 const char* exception::what() const throw() {
 	return "unspecified exception";
+}
+
+/*!
+	\class out_of_range
+	\brief Range exception.
+
+	This exception is thrown when an index or an iterator
+	points to bad place.
+
+	\sa wq::core::exception
+*/
+
+/*!
+	\brief Construct new exception object.
+
+	This constructor doesn't do anything special. The biggest
+	thing done by this constructor is calling of std::out_of_range constructor.
+*/
+out_of_range::out_of_range() throw()
+#if WQ_STD_COMPATIBILITY
+	: std::out_of_range("")
+#endif
+{
+
+}
+
+/*!
+	\brief Destruct exception object.
+
+	Standard destructor for virtual class.
+*/
+out_of_range::~out_of_range() throw() {
+
+}
+
+/*!
+	\brief Description string.
+
+	Description string for this kinf of exception
+	is "index or iterator was out of range".
+*/
+const char* out_of_range::what() const throw() {
+	return "index or iterator was out of range";
 }
 
 /*!

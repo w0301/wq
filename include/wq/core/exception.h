@@ -23,11 +23,13 @@
 
 #if WQ_STD_COMPATIBILITY
 	#include <exception>
+	#include <stdexcept>
 #endif
 
 namespace wq {
 namespace core {
 
+// base exception class
 class WQ_EXPORT exception
 #if WQ_STD_COMPATIBILITY
 	: public std::exception
@@ -38,6 +40,19 @@ class WQ_EXPORT exception
 		virtual ~exception() throw();
 
 		virtual const char* what() const throw();
+};
+
+// range error exception
+class WQ_EXPORT out_of_range
+#if WQ_STD_COMPATIBILITY
+	: public std::out_of_range
+#endif
+{
+		public:
+			out_of_range() throw();
+			virtual ~out_of_range() throw();
+
+			virtual const char* what() const throw();
 };
 
 #define WQ_NO_THROW(...) try { __VA_ARGS__ } catch(...) { }

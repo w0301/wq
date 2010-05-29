@@ -204,7 +204,9 @@ string::value_type& string::value_type::operator= (const value_type& r) {
 string::value_type& string::value_type::operator= (const char* c) {
 	if(m_owner == NULL) {
 		allocator_type alloc;
-		alloc.deallocate(m_ptr);
+		if(m_ptr != NULL) {
+			alloc.deallocate(m_ptr);
+		}
 		size_type clen = strlen(c);
 		if(string::octets_count(c, clen) != 0) {
 			m_ptr = alloc.allocate(clen + 1);
@@ -223,6 +225,114 @@ string::value_type& string::value_type::operator= (const char* c) {
 	}
 	return *this;
 }
+
+/*!
+	\brief Assign operator.
+
+	Assign character \a c as content of object.
+*/
+string::value_type& string::value_type::operator= (char c) {
+	if(m_owner == NULL) {
+		allocator_type alloc;
+		if(m_ptr != NULL) {
+			alloc.deallocate(m_ptr);
+		}
+		m_ptr = alloc.allocate(2);
+		alloc.construct(m_ptr, c);
+		alloc.construct(m_ptr + 1, '\0');
+	}
+	else {
+		// replacing + assure m_ptr validity
+		difference_type dist = m_ptr - m_owner->s()->m_start;
+		m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + 1, &c, 1);
+		m_ptr = m_owner->s()->m_start + dist;
+	}
+	return *this;
+}
+
+/*!
+	\brief Compare operator.
+
+	Compare character in \a this object with character
+	in \a r object.
+
+	\return Returns \b true when characters are identical.
+*/
+bool string::value_type::operator== (const value_type& r) const {
+	if(this == &r) {
+		return true;
+	}
+	size_type this_size = bytes();
+	size_type r_size = r.bytes();
+	if(this_size != r_size) {
+		return false;
+	}
+
+	for(size_type i = 0; i != r_size; i++) {
+		if(m_ptr[i] != r.m_ptr[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/*!
+	\brief Compare operator.
+
+	Compare character in \this object with character describes
+	in \a r string.
+
+	\return Returns \b true when characters are identical.
+*/
+bool string::value_type::operator== (const char* r) const {
+	size_type this_size = bytes();
+	size_type r_size = strlen(r);
+	if(this_size != r_size) {
+		return false;
+	}
+
+	for(size_type i = 0; i != r_size; i++) {
+		if(m_ptr[i] != r[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/*!
+	\brief Compare operator.
+
+	Compare character in \this object with character \a c.
+
+	\return Returns \b true when characters are identical.
+*/
+bool string::value_type::operator== (char r) const {
+	if(bytes() == 1 && *m_ptr == r) {
+		return true;
+	}
+	return false;
+}
+
+/*!
+	\fn bool string::value_type::operator!= (const value_type&) const
+	\brief Compare operator.
+
+	Convince operator - opposite of operator==.
+*/
+
+/*!
+	\fn bool string::value_type::operator!= (const char*) const
+	\brief Compare operator.
+
+	Convince operator - opposite of operator==.
+*/
+
+/*!
+	\fn bool string::value_type::operator!= (char) const
+	\brief Compare operator.
+
+	Convince operator - opposite of operator==.
+*/
 
 /*!
 	\brief Converts to C string.
@@ -249,9 +359,9 @@ const char* string::value_type::c_str() const {
 }
 
 /*!
-	\brief Implicit conversion to char.
+	\brief Conversion to char.
 
-	This operator allows implicit conversion to
+	This functions convert character to
 	\a char type, however if character has more
 	than 1 byte character \b '?' is returned and no
 	exception is thrown. To handle all unicode characters
@@ -259,12 +369,22 @@ const char* string::value_type::c_str() const {
 
 	\sa c_str()
 */
-string::value_type::operator char() const {
+char string::value_type::ch() const {
 	if(bytes() == 1) {
 		return *m_ptr;
 	}
 	return '?';
 }
+
+/*!
+	\fn string::value_type::operator char() const
+	\brief Implicit conversion.
+
+	This operator allows implicit conversion to
+	char type by calling ch() function.
+
+	\sa ch()
+*/
 
 // string::shared_data class
 string::shared_data::shared_data(const shared_data& from) :
@@ -405,7 +525,7 @@ const char* string::utf8_str() const {
 }
 
 /*!
-	\fn string::c_str() const
+	\fn const char* string::c_str() const
 	\brief Convert string.
 
 	For now this is same as utf8_str() functions.

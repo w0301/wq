@@ -68,10 +68,28 @@ class WQ_EXPORT string {
 				// assignment
 				value_type& operator= (const value_type&);
 				value_type& operator= (const char*);
+				value_type& operator= (char);
+
+				// comparing
+				bool operator== (const value_type&) const;
+				bool operator== (const char*) const;
+				bool operator== (char) const;
+				bool operator!= (const value_type& r) const {
+					return !(*this == r);
+				};
+				bool operator!= (const char* r) const {
+					return !(*this == r);
+				};
+				bool operator!= (char r) const {
+					return !(*this == r);
+				};
 
 				// conversion
 				const char* c_str() const;
-				operator char() const;
+				char ch() const;
+				operator char() const {
+					return ch();
+				};
 
 			private:
 				// pointer to first byte of utf8 character
@@ -143,6 +161,16 @@ class WQ_EXPORT string {
 		const_reference operator[] (size_type i) const {
 			return at(i);
 		};
+
+		// assigning
+
+		// appending
+
+		// inserting
+
+		// erasing
+
+		// replacing
 
 		// converting
 		const char* utf8_str() const;

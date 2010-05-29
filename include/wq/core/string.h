@@ -68,6 +68,9 @@ class WQ_EXPORT string {
 		string(const char*);
 		string(const string&);
 
+		// destruction
+		~string();
+
 		// manipulating with contents
 		void clear();
 
@@ -91,12 +94,10 @@ class WQ_EXPORT string {
 			return size() == 0;
 		};
 
-		// converting - TODO: need of temporally buffer - '\0' is needed
+		// converting
+		const char* utf8_str() const;
 		const char* c_str() const {
-			return s()->m_start == NULL ? "" : s()->m_start;
-		};
-		const char* utf8_str() const {
-			return s()->m_start == NULL ? "" : s()->m_start;
+			return utf8_str();
 		};
 
 	private:
@@ -110,20 +111,25 @@ class WQ_EXPORT string {
 				char* m_last;
 				char* m_end;
 				size_type m_len;
-				allocator_type m_alloc;
+				mutable allocator_type m_alloc;
 		};
 
 		// some private helpful functions
 		static size_type octets_count(char);
 		static size_type chars_count(const char*, size_type = -1);
+
+		// low level functions - these functions do not touch
+		// 's()->m_len' and if they return they return count
+		// of characters inserted/deleted or new count - depends on kind of functions
 		void lowl_realloc(size_type);
-		void lowl_append(const char*, size_type = -1);
-		void lowl_append(char, size_type);
-		void lowl_assign(const char*, size_type = -1);
-		void lowl_insert(char*, const char*, size_type = -1);
-		void lowl_insert(char*, char, size_type);
-		void lowl_erase(char*, char*);
-		void lowl_replace(char*, char*, const char*, size_type = -1);
+		size_type lowl_append(const char*, size_type = -1);
+		size_type lowl_assign(const char*, size_type = -1);
+		size_type lowl_insert(char*, const char*, size_type = -1);
+		size_type lowl_erase(char*, char*);
+		size_type lowl_replace(char*, char*, const char*, size_type = -1);
+
+		// temp buffer for *_str functions
+		mutable char* m_tempbuff;
 
 	protected:
 		WQ_NEW_SHARED_DATA();

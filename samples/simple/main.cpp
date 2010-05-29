@@ -34,12 +34,12 @@ namespace wq {
 
 int main() {
 	try {
-		wq::string str("ahóooooooj ako sa máš!!!");
+		wq::string str("abcdefghijklmn");
 		wq::string str2 = str;
 		std::cout << str.c_str() << std::endl;
 		std::cout << str2.c_str() << std::endl;
-		std::cout << str.size() << std::endl;
-		std::cout << str2.size() << std::endl;
+		std::cout << str.size() << " -- " << str.bytes() << std::endl;
+		std::cout << str2.size() << " -- " << str2.bytes()<< std::endl;
 	}
 	catch(wq::exception& e) {
 	    std::cout << e.what() << std::endl;

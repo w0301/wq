@@ -106,7 +106,7 @@ string::shared_data::~shared_data() {
 
 	This constructor constructs empty string.
 */
-string::string() : s_ptr(new shared_data) {
+string::string() : m_tempbuff(NULL), s_ptr(new shared_data) {
 
 }
 
@@ -115,8 +115,8 @@ string::string() : s_ptr(new shared_data) {
 
 	Constructor constructs string with the given context.
 */
-string::string(const char* str) : s_ptr(new shared_data) {
-	lowl_append(str);
+string::string(const char* str) : m_tempbuff(NULL), s_ptr(new shared_data) {
+	s()->m_len += lowl_append(str);
 }
 
 /*!
@@ -126,8 +126,14 @@ string::string(const char* str) : s_ptr(new shared_data) {
 	However constructor will perform shallow copy of string
 	and later, if it is necessary, deep copy will be performed.
 */
-string::string(const string& other) : s_ptr( other.s_ptr ) {
+string::string(const string& other) : m_tempbuff(NULL), s_ptr(other.s_ptr) {
 
+}
+
+string::~string() {
+	if(m_tempbuff != NULL) {
+		s()->m_alloc.deallocate(m_tempbuff);
+	}
 }
 
 /*!
@@ -142,6 +148,16 @@ void string::clear() {
 	}
 }
 
+const char* string::utf8_str() const {
+	if(m_tempbuff != NULL) {
+		s()->m_alloc.deallocate(m_tempbuff);
+	}
+	m_tempbuff = s()->m_alloc.allocate(bytes() + 1);
+	s()->m_alloc.copy(m_tempbuff, s()->m_start, bytes());
+	s()->m_alloc.construct(m_tempbuff + bytes(), '\0');
+
+	return m_tempbuff;
+}
 // private functions
 // function will return number of octets of utf8 character 'c'
 string::size_type string::octets_count(char c) {
@@ -197,35 +213,25 @@ void string::lowl_realloc(size_type size) {
 }
 
 // this function appends new utf8 chars to string
-void string::lowl_append(const char* str, size_type str_size) {
+string::size_type string::lowl_append(const char* str, size_type str_size) {
 	if(str_size == -1) {
 		str_size = strlen(str);
 	}
 	lowl_realloc(str_size);
 	s()->m_last = s()->m_alloc.copy(s()->m_last, str, str_size);
 
-	// adding to len of string
-	s()->m_len += chars_count(str, str_size);
-}
-
-// this function appends 'count' 'c' characters at the end
-void string::lowl_append(char c, size_type count) {
-	char* buff = new char[count];
-	for(size_type i = 0; i != count; i++) {
-		buff[i] = c;
-	}
-	lowl_append(buff, count);
-	delete []buff;
+	// returning length of inserted string
+	return chars_count(str, str_size);
 }
 
 // this function delete string contents and assign the new one
-void string::lowl_assign(const char* str, size_type str_size) {
+string::size_type string::lowl_assign(const char* str, size_type str_size) {
 	clear();
-	lowl_append(str, str_size);
+	return lowl_append(str, str_size);
 }
 
 // this function inserts 'str' at 'at' position (moving all chars after 'at' (including 'at') to right)
-void string::lowl_insert(char* at, const char* str, size_type str_size) {
+string::size_type string::lowl_insert(char* at, const char* str, size_type str_size) {
 	if(str_size == -1) {
 		str_size = strlen(str);
 	}
@@ -240,33 +246,32 @@ void string::lowl_insert(char* at, const char* str, size_type str_size) {
 
 	// copying new data to right place
 	s()->m_alloc.copy(at, str, str_size);
-}
 
-// inserts 'count' 'c' characters at 'at'
-void string::lowl_insert(char* at, char c, size_type count) {
-	char* buff = new char[count];
-	for(size_type i = 0; i != count; i++) {
-		buff[i] = c;
-	}
-	lowl_insert(at, buff, count);
-	delete []buff;
+	// returning length
+	return chars_count(str, str_size);
 }
 
 // delete characters between two pointers that points to bytes in string
-void string::lowl_erase(char* first, char* last) {
+string::size_type string::lowl_erase(char* first, char* last) {
 	if(first == NULL || last == NULL) {
-		return;
+		return 0;
 	}
 	// rewriting deleted data
 	s()->m_last = s()->m_alloc.ocopy(first, last, s()->m_last - last);
+
+	// erased length
+	return chars_count(first, last - first - 1);
 }
 
 // replace bytes between 'first' and 'last' with str
-void string::lowl_replace(char* first, char* last, const char* str, size_type str_size) {
+string::size_type string::lowl_replace(char* first, char* last, const char* str, size_type str_size) {
 	if(str_size == -1) {
 		str_size = strlen(str);
 	}
 	size_type rep_size = last - first;
+
+	// first length that will be erased
+	size_type ret = chars_count(str, str_size) - chars_count(first, last - first);
 
 	// the most obvious way to do that - I am lazy to make it shorter :)
 	if(rep_size == str_size) {
@@ -280,6 +285,7 @@ void string::lowl_replace(char* first, char* last, const char* str, size_type st
 		first = s()->m_alloc.copy(first, str, str_size);
 		lowl_erase(first, first + (rep_size - str_size));
 	}
+	return ret;
 }
 
 }  // namespace core

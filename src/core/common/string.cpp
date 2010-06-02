@@ -58,11 +58,8 @@ string::value_type::value_type(const value_type& from) :
 	if(m_owner != NULL) {
 		m_ptr = from.m_ptr;
 	}
-	else {
+	else if(!from.is_null()) {
 		allocator_type alloc;
-		if(m_ptr != NULL) {
-			alloc.deallocate(m_ptr);
-		}
 		size_type clen = from.bytes();
 		m_ptr = alloc.allocate(clen + 1);
 		alloc.copy(m_ptr, from.m_ptr, clen);
@@ -78,9 +75,15 @@ string::value_type::value_type(const value_type& from) :
 	wq::core::encode_error is thrown.
 
 	\param c Pointer to first byte of utf8 encoded character sequence.
+	\param clen Length of character in bytes, if is \b -1 it is automatically determinate.
 */
-string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) {
-	size_type clen = strlen(c);
+string::value_type::value_type(const char* c, size_type clen) : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) {
+	if(c == NULL) {
+		return;
+	}
+	if(clen == -1) {
+		clen = strlen(c);
+	}
 	if(string::octets_count(c, clen) != 0) {
 		allocator_type alloc;
 		m_ptr = alloc.allocate(clen + 1);
@@ -90,6 +93,13 @@ string::value_type::value_type(const char* c) : m_ptr(NULL), m_owner(NULL), m_te
 	else {
 		throw encode_error();
 	}
+}
+
+string::value_type::value_type(char c) : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) {
+	allocator_type alloc;
+	m_ptr = alloc.allocate(2);
+	alloc.construct(m_ptr, c);
+	alloc.construct(m_ptr + 1, '\0');
 }
 
 /*!
@@ -155,14 +165,21 @@ string::value_type::~value_type() {
 	\brief Next character.
 
 	Function returns next character in string. If object
-	is not "reference object" or there is no character
-	character \b '\0' is returned.
+	is not "reference object" or there is no any other
+	character default object is returned - is_null() returns true.
 */
 string::value_type string::value_type::next() const {
-	value_type ret("\0");
-	if(m_owner != NULL && m_ptr + bytes() != m_owner->s()->m_last) {
-		ret = *this;
-		ret.m_ptr += ret.bytes();
+	value_type ret;
+	if(owner() != NULL && m_ptr + bytes() < owner()->s()->m_last) {
+		ret = value_type(m_owner, m_ptr + bytes());
+	}
+	return ret;
+}
+
+string::value_type string::value_type::prev() const {
+	value_type ret;
+	if(owner() != NULL && m_ptr - bytes() >= owner()->s()->m_start) {
+		ret = value_type(m_owner, m_ptr - bytes());
 	}
 	return ret;
 }
@@ -176,19 +193,28 @@ string::value_type string::value_type::next() const {
 */
 string::value_type& string::value_type::operator= (const value_type& r) {
 	if(this != &r) {
-		m_owner = r.m_owner;
-		if(m_owner != NULL) {
-			m_ptr = r.m_ptr;
+		if(m_owner == NULL) {
+            m_owner = r.m_owner;
+            if(m_owner == NULL) {
+                allocator_type alloc;
+                if(!is_null()) {
+                    alloc.deallocate(m_ptr);
+                    m_ptr = NULL;
+                }
+                size_type clen = r.bytes();
+                m_ptr = alloc.allocate(clen + 1);
+                alloc.copy(m_ptr, r.m_ptr, clen);
+                alloc.construct(m_ptr + clen, '\0');
+            }
+            else {
+                m_ptr = r.m_ptr;
+            }
 		}
 		else {
-			allocator_type alloc;
-			if(m_ptr != NULL) {
-				alloc.deallocate(m_ptr);
-			}
-			size_type clen = r.bytes();
-			m_ptr = alloc.allocate(clen + 1);
-			alloc.copy(m_ptr, r.m_ptr, clen);
-			alloc.construct(m_ptr + clen, '\0');
+			// replacing + assure m_ptr validity
+            difference_type dist = m_ptr - m_owner->s()->m_start;
+            m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + bytes(), r.m_ptr, r.bytes());
+            m_ptr = m_owner->s()->m_start + dist;
 		}
 	}
 	return *this;
@@ -220,7 +246,7 @@ string::value_type& string::value_type::operator= (const char* c) {
 	else {
 		// replacing + assure m_ptr validity
 		difference_type dist = m_ptr - m_owner->s()->m_start;
-		m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + octets_count(m_ptr, bytes()), c);
+		m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + bytes(), c);
 		m_ptr = m_owner->s()->m_start + dist;
 	}
 	return *this;
@@ -250,6 +276,15 @@ string::value_type& string::value_type::operator= (char c) {
 	return *this;
 }
 
+string::value_type& string::value_type::rebind(const value_type& n) {
+    if(owner() != NULL) {
+        m_owner = n.m_owner;
+        m_ptr = n.m_ptr;
+        return *this;
+    }
+    return (*this) = n;
+}
+
 /*!
 	\brief Compare operator.
 
@@ -259,7 +294,13 @@ string::value_type& string::value_type::operator= (char c) {
 	\return Returns \b true when characters are identical.
 */
 bool string::value_type::operator== (const value_type& r) const {
-	if(this == &r) {
+	if(m_owner == r.m_owner && m_ptr == r.m_ptr) {
+		return true;
+	}
+	else if(m_ptr == NULL || r.m_ptr == NULL) {
+		return false;
+	}
+	else if(this == &r) {
 		return true;
 	}
 	size_type this_size = bytes();
@@ -285,6 +326,9 @@ bool string::value_type::operator== (const value_type& r) const {
 	\return Returns \b true when characters are identical.
 */
 bool string::value_type::operator== (const char* r) const {
+	if(m_ptr == NULL || r == NULL) {
+		return false;
+	}
 	size_type this_size = bytes();
 	size_type r_size = strlen(r);
 	if(this_size != r_size) {
@@ -386,6 +430,31 @@ char string::value_type::ch() const {
 	\sa ch()
 */
 
+// string::iterator class
+string::iterator string::iterator::operator+ (size_type n) const {
+	iterator ret = *this;
+	for( ; n != 0; n--) {
+		ret.m_val.rebind(ret.m_val.next());
+		// first increment to NULL is allowed!
+		if(ret.m_val.is_null() && n > 1) {
+			throw out_of_range();
+		}
+	}
+	return ret;
+}
+
+string::iterator string::iterator::operator- (size_type n) const {
+	iterator ret = *this;
+	for( ; n != 0; n--) {
+		ret.m_val.rebind(ret.m_val.prev());
+		// first increment to NULL is allowed!
+		if(ret.m_val.is_null() && n > 1) {
+			throw out_of_range();
+		}
+	}
+	return ret;
+}
+
 // string::shared_data class
 string::shared_data::shared_data(const shared_data& from) :
 		m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) {
@@ -422,8 +491,8 @@ string::string() : m_tempbuff(NULL), s_ptr(new shared_data) {
 
 	Constructor constructs string with the given context.
 */
-string::string(const char* str) : m_tempbuff(NULL), s_ptr(new shared_data) {
-	s()->m_len += lowl_append(str);
+string::string(const char* str, size_type size) : m_tempbuff(NULL), s_ptr(new shared_data) {
+	assign(str, size);
 }
 
 /*!
@@ -477,7 +546,7 @@ string::reference string::at(size_type i) {
 	// finding first byte of char
 	char* first_byte = s()->m_start;
 	while(i != 0) {
-		first_byte += octets_count(first_byte, s()->m_last - first_byte);
+		first_byte += octets_count(first_byte);
 		i--;
 	}
 	return reference(this, first_byte);
@@ -498,10 +567,36 @@ string::const_reference string::at(size_type i) const {
 	// finding first byte of char
 	char* first_byte = s()->m_start;
 	while(i != 0) {
-		first_byte += octets_count(first_byte, s()->m_last - first_byte);
+		first_byte += octets_count(first_byte);
 		i--;
 	}
 	return reference(this, first_byte);
+}
+
+string& string::assign(const string& str) {
+	s()->m_len = lowl_assign(str.s()->m_start, str.bytes());
+	return *this;
+}
+
+string& string::assign(const string& str, size_type from, size_type size) {
+	char* start_at = str.s()->m_start + at(from).ptr_index();
+	size = at(from + size).ptr_index();
+	s()->m_len = lowl_assign(start_at, size);
+	return *this;
+}
+
+string& string::assign(const char* str, size_type size) {
+	s()->m_len = lowl_assign(str, size);
+	return *this;
+}
+
+string& string::assign(size_type n, value_type c) {
+	clear();
+	lowl_realloc(n);
+	for(; n != 0; n--) {
+		s()->m_len += lowl_append(c.ptr(), c.bytes());
+	}
+	return *this;
 }
 
 /*!
@@ -555,7 +650,7 @@ string::size_type string::octets_count(const char* arr, size_type size) {
 		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && !(c & (1 << 4)) ) {
 			return 3;
 		}
-		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && c & (1 << 4) && !(c & (1 << 5)) ) {
+		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && c & (1 << 4) && !(c & (1 << 4)) ) {
 			return 4;
 		}
 		return 0;

@@ -21,7 +21,7 @@
 namespace wq {
 namespace core {
 
-// bad_alloc
+// bad_alloc class
 bad_alloc::bad_alloc() throw() : wq::core::exception()
 #if WQ_STD_COMPATIBILITY
 	, std::bad_alloc()

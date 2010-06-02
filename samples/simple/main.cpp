@@ -34,20 +34,20 @@ namespace wq {
 
 int main() {
 	try {
-		wq::string str("ľščťžýáíé");
-		wq::string str2 = str;
-		std::cout << str.c_str() << std::endl;
-		std::cout << str2.c_str() << std::endl;
-		std::cout << str.size() << " -- " << str.bytes() << std::endl;
-		std::cout << str2.size() << " -- " << str2.bytes()<< std::endl;
+		wq::string str("rt");
 
-		for(wq::string::size_type i = 0; i != str.size(); i++) {
-			wq::string::reference ref = str.at(i);
-			std::cout << ref.c_str() << " -- " << ref.next().c_str() << std::endl;
-			ref = "ž";
+		/*
+		wq::string::iterator i = str.begin();
+		for( ; i != str.end(); ) {
+			std::cout << i->c_str() << std::endl;
+			i = i + 1;
 		}
-		std::cout << str.c_str() << std::endl;
-		std::cout << str.size() << " -- " << str.bytes() << std::endl;
+		*/
+		wq::string::value_type i = str.at(0);
+		for( ; i != wq::string::value_type(); ) {
+			std::cout << i.c_str() << std::endl;
+			i.rebind(i.next());
+		}
 	}
 	catch(wq::exception& e) {
 	    std::cout << e.what() << std::endl;

@@ -5,6 +5,7 @@ project(wq)
 set(WQ_MAJOR_VERSION 0)
 set(WQ_MINOR_VERSION 0)
 set(WQ_MAINTENANCE_VERSION 0)
+set(WQ_FULL_VERSION "${WQ_MAJOR_VERSION}.${WQ_MINOR_VERSION}.${WQ_MAINTENANCE_VERSION}")
 
 # Setting of libs platform.
 if(UNIX)
@@ -77,9 +78,8 @@ if(WQ_BUILD_SAMPLES)
 endif(WQ_BUILD_SAMPLES)
 
 # At the end setting installing commands would be great idea :).
+# Install commands for libraries are in the CMakeLists.txt files in src/ subdirectory.
 if(UNIX)
-	# libraries
-	install(TARGETS ${WQ_BUILT_LIBS} LIBRARY DESTINATION lib)
 	# headers
 	install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/wq/" DESTINATION "include/wq" FILES_MATCHING PATTERN "*.h")
 	# and config header
@@ -87,3 +87,4 @@ if(UNIX)
 else(NOT UNIX)
 	# TODO: Windows destination dirs will be more complex.
 endif(UNIX)
+

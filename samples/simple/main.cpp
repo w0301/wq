@@ -36,7 +36,11 @@ namespace wq {
 int main() {
 	try {
 		wq::string str("+ľščťžýáíé=");
-		for(wq::string::iterator i = str.begin(); i != str.end(); i++) {
+		for(wq::string::const_reverse_iterator i = str.rbegin(); i != str.rend(); i++) {
+			std::cout << *i << std::endl;
+		}
+		std::cout << std::endl << std::endl;
+		for(wq::string::const_iterator i = str.begin(); i != str.end(); i++) {
 			std::cout << *i << std::endl;
 		}
 	}

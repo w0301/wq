@@ -146,6 +146,7 @@ class WQ_EXPORT string {
 		//! Constant reference type for class.
 		typedef const reference const_reference;
 
+		class const_iterator;
 		//! Class which represent special iterator.
 		class iterator {
 			public:
@@ -188,30 +189,183 @@ class WQ_EXPORT string {
 				bool operator!= (const iterator& r) const {
 					return m_val != r.m_val;
 				};
+				bool operator< (const iterator& r) const {
+					return m_val.ptr() < r.m_val.ptr();
+				};
+				bool operator> (const iterator& r) const {
+					return m_val.ptr() > r.m_val.ptr();
+				};
+				bool operator<= (const iterator& r) const {
+					return m_val.ptr() <= r.m_val.ptr();
+				};
+				bool operator>= (const iterator& r) const {
+					return m_val.ptr() >= r.m_val.ptr();
+				};
+
+				bool operator== (const const_iterator& r) const {
+					return m_val == r.m_val;
+				};
+				bool operator!= (const const_iterator& r) const {
+					return m_val != r.m_val;
+				};
+				bool operator< (const const_iterator& r) const {
+					return m_val.ptr() < r.m_val.ptr();
+				};
+				bool operator> (const const_iterator& r) const {
+					return m_val.ptr() > r.m_val.ptr();
+				};
+				bool operator<= (const const_iterator& r) const {
+					return m_val.ptr() <= r.m_val.ptr();
+				};
+				bool operator>= (const const_iterator& r) const {
+					return m_val.ptr() >= r.m_val.ptr();
+				};
+
+				// distance of iterators
+				difference_type operator- (const iterator& r) const {
+					return m_val.ptr() - r.m_val.ptr();
+				};
+				difference_type operator- (const const_iterator& r) const {
+					return m_val.ptr() - r.m_val.ptr();
+				};
 
 				// incrementing and decrementing
 				// all this operations are const!
 				iterator operator+ (size_type) const;
 				iterator operator- (size_type) const;
-				iterator& operator+= (size_type n) const {
-					return ( (*const_cast<iterator*>(this)) = ((*this) + n) );
+				iterator& operator+= (size_type n) {
+					return ( (*this) = ((*this) + n) );
 				};
-				iterator& operator-= (size_type n) const {
-					return ( (*const_cast<iterator*>(this)) = ((*this) - n) );
+				iterator& operator-= (size_type n) {
+					return ( (*this) = ((*this) - n) );
 				};
-				iterator& operator++ (int) const {
+				iterator& operator++ () {
 					return ( (*this) += 1 );
 				};
-				iterator& operator-- (int) const {
+				iterator& operator-- () {
+					return ( (*this) -= 1 );
+				};
+				iterator& operator++ (int) {
+					return ( (*this) += 1 );
+				};
+				iterator& operator-- (int) {
 					return ( (*this) -= 1 );
 				};
 
 			private:
-				mutable value_type m_val;
+				value_type m_val;
+				friend class const_iterator;
 		};
 
-		//! Constant iterator type.
-		typedef const iterator const_iterator;
+		//! Class which represent special constant iterator.
+		class const_iterator {
+			public:
+				typedef string::value_type value_type;
+				typedef string::reference reference;
+				typedef string::value_type* pointer;
+				typedef string::difference_type difference_type;
+				typedef std::bidirectional_iterator_tag iterator_category;
+
+				// creation and copying
+				const_iterator() { };
+				const_iterator(const value_type& val) : m_val(val) { };
+				const_iterator(const const_iterator& from) : m_val(from.m_val) { };
+				const_iterator& operator= (const const_iterator& r) {
+					if(&r != this) {
+						// we have to use rebind here!
+						m_val.rebind(r.m_val);
+					}
+					return *this;
+				};
+				const_iterator(const iterator& from) : m_val(from.m_val) { };
+				const_iterator& operator= (const iterator& r) {
+					// we have to use rebind here!
+					m_val.rebind(r.m_val);
+					return *this;
+				};
+
+				// converting
+				const value_type* operator-> () const {
+					return &m_val;
+				};
+				const_reference operator* () const {
+					return m_val;
+				};
+
+				// comparing
+				bool operator== (const iterator& r) const {
+					return m_val == r.m_val;
+				};
+				bool operator!= (const iterator& r) const {
+					return m_val != r.m_val;
+				};
+				bool operator< (const iterator& r) const {
+					return m_val.ptr() < r.m_val.ptr();
+				};
+				bool operator> (const iterator& r) const {
+					return m_val.ptr() > r.m_val.ptr();
+				};
+				bool operator<= (const iterator& r) const {
+					return m_val.ptr() <= r.m_val.ptr();
+				};
+				bool operator>= (const iterator& r) const {
+					return m_val.ptr() >= r.m_val.ptr();
+				};
+
+				bool operator== (const const_iterator& r) const {
+					return m_val == r.m_val;
+				};
+				bool operator!= (const const_iterator& r) const {
+					return m_val != r.m_val;
+				};
+				bool operator< (const const_iterator& r) const {
+					return m_val.ptr() < r.m_val.ptr();
+				};
+				bool operator> (const const_iterator& r) const {
+					return m_val.ptr() > r.m_val.ptr();
+				};
+				bool operator<= (const const_iterator& r) const {
+					return m_val.ptr() <= r.m_val.ptr();
+				};
+				bool operator>= (const const_iterator& r) const {
+					return m_val.ptr() >= r.m_val.ptr();
+				};
+
+				// distance of iterators
+				difference_type operator- (const iterator& r) const {
+					return m_val.ptr() - r.m_val.ptr();
+				};
+				difference_type operator- (const const_iterator& r) const {
+					return m_val.ptr() - r.m_val.ptr();
+				};
+
+				// incrementing and decrementing
+				// all this operations are const!
+				const_iterator operator+ (size_type) const;
+				const_iterator operator- (size_type) const;
+				const_iterator& operator+= (size_type n) {
+					return ( (*this) = ((*this) + n) );
+				};
+				const_iterator& operator-= (size_type n) {
+					return ( (*this) = ((*this) - n) );
+				};
+				const_iterator& operator++ () {
+					return ( (*this) += 1 );
+				};
+				const_iterator& operator-- () {
+					return ( (*this) -= 1 );
+				};
+				const_iterator& operator++ (int) {
+					return ( (*this) += 1 );
+				};
+				const_iterator& operator-- (int) {
+					return ( (*this) -= 1 );
+				};
+
+			private:
+				value_type m_val;
+				friend class iterator;
+		};
 
 		//! Reverse iterator type.
 		typedef std::reverse_iterator<iterator> reverse_iterator;
@@ -252,32 +406,32 @@ class WQ_EXPORT string {
 
 		// iterators
 		iterator begin() {
-			return iterator( value_type(this, s()->m_start) );
-		};
-		const_iterator begin() const {
-			return iterator( value_type(this, s()->m_start) );
+			return iterator( value_type(this, const_cast<const string*>(this)->s()->m_start) );
 		};
 		iterator end() {
-			return iterator( value_type(this, s()->m_last) );
+			return iterator( value_type(this, const_cast<const string*>(this)->s()->m_last) );
+		};
+		const_iterator begin() const {
+			return const_iterator( value_type(this, s()->m_start) );
 		};
 		const_iterator end() const {
-			return iterator( value_type(this, s()->m_last) );
+			return const_iterator( value_type(this, s()->m_last) );
 		};
 
-		/*
+		// reverse iterators
 		reverse_iterator rbegin() {
+			return reverse_iterator( end() );
+		};
+		reverse_iterator rend() {
 			return reverse_iterator( begin() );
 		};
 		const_reverse_iterator rbegin() const {
-			return const_reverse_iterator( begin() );
-		};
-		reverse_iterator rend() {
-			return reverse_iterator( end() );
-		};
-		const_reverse_iterator rend() const {
 			return const_reverse_iterator( end() );
 		};
-		*/
+		const_reverse_iterator rend() const {
+			return const_reverse_iterator( begin() );
+		};
+
 
 		// characters returning
 		reference at(size_type);

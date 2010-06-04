@@ -169,15 +169,32 @@ string::value_type::~value_type() {
 	character default object is returned - is_null() returns true.
 */
 string::value_type string::value_type::next() const {
-	if(owner() != NULL && m_ptr + bytes() < owner()->s()->m_last) {
+	if(owner() == NULL) {
+		return value_type();
+	}
+	if(m_ptr + bytes() < owner()->s()->m_last) {
 		return value_type(m_owner, m_ptr + bytes());
 	}
 	return value_type(m_owner, owner()->s()->m_last);
 }
 
 string::value_type string::value_type::prev() const {
-	if(owner() != NULL && m_ptr - bytes() > owner()->s()->m_start) {
-		return value_type(m_owner, m_ptr - bytes());
+	if(owner() == NULL) {
+		return value_type();
+	}
+
+	// finding previous character is more complex :(
+	value_type ret = value_type(m_owner, m_ptr);
+	size_type clen = 0;
+	while(1) {
+		clen++;
+		ret.m_ptr--;
+		if(ret.bytes() != 0) {
+			break;
+		}
+	}
+	if(m_ptr - clen > owner()->s()->m_start) {
+		return value_type(m_owner, m_ptr - clen);
 	}
 	return value_type(m_owner, owner()->s()->m_start);
 }
@@ -382,7 +399,7 @@ bool string::value_type::operator== (char r) const {
 	This function converts character to sequence
 	of char-s (bytes) and return a pointer to sequence.
 
-	\sa operator char()
+	\sa operator const char*()
 */
 const char* string::value_type::utf8() const {
 	if(m_owner != NULL) {
@@ -407,9 +424,9 @@ const char* string::value_type::utf8() const {
 	\a char type, however if character has more
 	than 1 byte character \b '?' is returned and no
 	exception is thrown. To handle all unicode characters
-	use c_str() function.
+	use utf8() function.
 
-	\sa c_str()
+	\sa utf8()
 */
 char string::value_type::ch() const {
 	if(bytes() == 1) {
@@ -443,6 +460,31 @@ string::iterator string::iterator::operator+ (size_type n) const {
 
 string::iterator string::iterator::operator- (size_type n) const {
 	iterator ret = *this;
+	for( ; n != 0; n--) {
+		ret.m_val.rebind(ret.m_val.prev());
+		// only first decrement to first char is allowed!
+		if(ret.m_val.is_first() && n > 1) {
+			throw out_of_range();
+		}
+	}
+	return ret;
+}
+
+// string::const_iterator class
+string::const_iterator string::const_iterator::operator+ (size_type n) const {
+	const_iterator ret = *this;
+	for( ; n != 0; n--) {
+		ret.m_val.rebind(ret.m_val.next());
+		// only first increment to last char is allowed!
+		if(ret.m_val.is_last() && n > 1) {
+			throw out_of_range();
+		}
+	}
+	return ret;
+}
+
+string::const_iterator string::const_iterator::operator- (size_type n) const {
+	const_iterator ret = *this;
 	for( ; n != 0; n--) {
 		ret.m_val.rebind(ret.m_val.prev());
 		// only first decrement to first char is allowed!

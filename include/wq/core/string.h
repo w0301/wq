@@ -83,6 +83,14 @@ class WQ_EXPORT string {
 					return m_ptr == NULL;
 				};
 
+				// return if char is first/last in string
+				bool is_first() const {
+					return m_owner == NULL ? true : owner()->s()->m_start == m_ptr;
+				};
+				bool is_last() const {
+					return m_owner == NULL ? true : owner()->s()->m_last == m_ptr;
+				};
+
 				// next/previous character in string
 				value_type next() const;
 				value_type prev() const;
@@ -110,13 +118,17 @@ class WQ_EXPORT string {
 				};
 
 				// conversion
-				const char* c_str() const;
+				const char* utf8() const;
 				char ch() const;
-				operator char() const {
-					return ch();
+				operator const char*() const {
+					return utf8();
 				};
 
 			private:
+				string* owner() {
+					return m_owner;
+				};
+
 				// pointer to first byte of utf8 character
 				char* m_ptr;
 
@@ -137,13 +149,20 @@ class WQ_EXPORT string {
 		//! Class which represent special iterator.
 		class iterator {
 			public:
+				typedef string::value_type value_type;
+				typedef string::reference reference;
+				typedef string::value_type* pointer;
+				typedef string::difference_type difference_type;
+				typedef std::bidirectional_iterator_tag iterator_category;
+
 				// creation and copying
 				iterator() { };
 				iterator(const value_type& val) : m_val(val) { };
 				iterator(const iterator& from) : m_val(from.m_val) { };
 				iterator& operator= (const iterator& r) {
 					if(&r != this) {
-						m_val = r.m_val;
+						// we have to use rebind here!
+						m_val.rebind(r.m_val);
 					}
 					return *this;
 				};
@@ -171,23 +190,24 @@ class WQ_EXPORT string {
 				};
 
 				// incrementing and decrementing
+				// all this operations are const!
 				iterator operator+ (size_type) const;
 				iterator operator- (size_type) const;
-				iterator& operator+= (size_type n) {
-					return ( (*this) = ((*this) + n) );
+				iterator& operator+= (size_type n) const {
+					return ( (*const_cast<iterator*>(this)) = ((*this) + n) );
 				};
-				iterator& operator-= (size_type n) {
-					return ( (*this) = ((*this) - n) );
+				iterator& operator-= (size_type n) const {
+					return ( (*const_cast<iterator*>(this)) = ((*this) - n) );
 				};
-				iterator& operator++ (int) {
+				iterator& operator++ (int) const {
 					return ( (*this) += 1 );
 				};
-				iterator& operator-- (int) {
+				iterator& operator-- (int) const {
 					return ( (*this) -= 1 );
 				};
 
 			private:
-				value_type m_val;
+				mutable value_type m_val;
 		};
 
 		//! Constant iterator type.
@@ -232,17 +252,32 @@ class WQ_EXPORT string {
 
 		// iterators
 		iterator begin() {
-			return iterator(at(0));
+			return iterator( value_type(this, s()->m_start) );
 		};
 		const_iterator begin() const {
-			return iterator(at(0));
+			return iterator( value_type(this, s()->m_start) );
 		};
 		iterator end() {
-			return iterator();
+			return iterator( value_type(this, s()->m_last) );
 		};
 		const_iterator end() const {
-			return iterator();
+			return iterator( value_type(this, s()->m_last) );
 		};
+
+		/*
+		reverse_iterator rbegin() {
+			return reverse_iterator( begin() );
+		};
+		const_reverse_iterator rbegin() const {
+			return const_reverse_iterator( begin() );
+		};
+		reverse_iterator rend() {
+			return reverse_iterator( end() );
+		};
+		const_reverse_iterator rend() const {
+			return const_reverse_iterator( end() );
+		};
+		*/
 
 		// characters returning
 		reference at(size_type);

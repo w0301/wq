@@ -27,6 +27,7 @@
 #include "wq/core/string.h"
 
 #include <iostream>
+#include <string>
 
 namespace wq {
 	using namespace core;
@@ -34,19 +35,9 @@ namespace wq {
 
 int main() {
 	try {
-		wq::string str("rt");
-
-		/*
-		wq::string::iterator i = str.begin();
-		for( ; i != str.end(); ) {
-			std::cout << i->c_str() << std::endl;
-			i = i + 1;
-		}
-		*/
-		wq::string::value_type i = str.at(0);
-		for( ; i != wq::string::value_type(); ) {
-			std::cout << i.c_str() << std::endl;
-			i.rebind(i.next());
+		wq::string str("+ľščťžýáíé=");
+		for(wq::string::iterator i = str.begin(); i != str.end(); i++) {
+			std::cout << *i << std::endl;
 		}
 	}
 	catch(wq::exception& e) {

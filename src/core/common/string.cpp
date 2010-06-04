@@ -169,19 +169,17 @@ string::value_type::~value_type() {
 	character default object is returned - is_null() returns true.
 */
 string::value_type string::value_type::next() const {
-	value_type ret;
 	if(owner() != NULL && m_ptr + bytes() < owner()->s()->m_last) {
-		ret = value_type(m_owner, m_ptr + bytes());
+		return value_type(m_owner, m_ptr + bytes());
 	}
-	return ret;
+	return value_type(m_owner, owner()->s()->m_last);
 }
 
 string::value_type string::value_type::prev() const {
-	value_type ret;
-	if(owner() != NULL && m_ptr - bytes() >= owner()->s()->m_start) {
-		ret = value_type(m_owner, m_ptr - bytes());
+	if(owner() != NULL && m_ptr - bytes() > owner()->s()->m_start) {
+		return value_type(m_owner, m_ptr - bytes());
 	}
-	return ret;
+	return value_type(m_owner, owner()->s()->m_start);
 }
 
 /*!
@@ -386,7 +384,7 @@ bool string::value_type::operator== (char r) const {
 
 	\sa operator char()
 */
-const char* string::value_type::c_str() const {
+const char* string::value_type::utf8() const {
 	if(m_owner != NULL) {
 		allocator_type alloc;
 		if(m_tempbuff != NULL) {
@@ -435,8 +433,8 @@ string::iterator string::iterator::operator+ (size_type n) const {
 	iterator ret = *this;
 	for( ; n != 0; n--) {
 		ret.m_val.rebind(ret.m_val.next());
-		// first increment to NULL is allowed!
-		if(ret.m_val.is_null() && n > 1) {
+		// only first increment to last char is allowed!
+		if(ret.m_val.is_last() && n > 1) {
 			throw out_of_range();
 		}
 	}
@@ -447,8 +445,8 @@ string::iterator string::iterator::operator- (size_type n) const {
 	iterator ret = *this;
 	for( ; n != 0; n--) {
 		ret.m_val.rebind(ret.m_val.prev());
-		// first increment to NULL is allowed!
-		if(ret.m_val.is_null() && n > 1) {
+		// only first decrement to first char is allowed!
+		if(ret.m_val.is_first() && n > 1) {
 			throw out_of_range();
 		}
 	}
@@ -543,13 +541,7 @@ string::reference string::at(size_type i) {
 	if(i > size()) {
 		throw out_of_range();
 	}
-	// finding first byte of char
-	char* first_byte = s()->m_start;
-	while(i != 0) {
-		first_byte += octets_count(first_byte);
-		i--;
-	}
-	return reference(this, first_byte);
+	return *(begin() + i);
 }
 
 /*!
@@ -564,13 +556,7 @@ string::const_reference string::at(size_type i) const {
 	if(i > size()) {
 		throw out_of_range();
 	}
-	// finding first byte of char
-	char* first_byte = s()->m_start;
-	while(i != 0) {
-		first_byte += octets_count(first_byte);
-		i--;
-	}
-	return reference(this, first_byte);
+	return *(begin() + i);
 }
 
 string& string::assign(const string& str) {

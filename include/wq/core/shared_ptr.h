@@ -124,7 +124,7 @@ template<class T> void shared_ptr<T>::set_data(const shared_ptr& from) {
 
 template<class T> void shared_ptr<T>::unset_data() {
 	if(is_ok()) {
-		// atomic decrement and optionally setting pointer
+		// atomic decrement and optionally deleting
 		m_count->dec();
 		if(data_count() == 0) {
 			delete m_ptr;

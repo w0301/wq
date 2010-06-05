@@ -30,22 +30,30 @@
 #include <string>
 
 namespace wq {
-	using namespace core;
+using namespace core;
 }
 
 int main() {
-	try {
-		wq::string str("+ľščťžýáíé=");
-		for(wq::string::const_reverse_iterator i = str.rbegin(); i != str.rend(); i++) {
-			std::cout << *i << std::endl;
-		}
-		std::cout << std::endl << std::endl;
-		for(wq::string::const_iterator i = str.begin(); i != str.end(); i++) {
-			std::cout << *i << std::endl;
-		}
-	}
-	catch(wq::exception& e) {
-	    std::cout << e.what() << std::endl;
+    try {
+        wq::string str("článku");
+        std::cout << str.size() << std::endl;
+        str.append(6, '-');
+        str.append(str, 0, 5);
+        //str.assign("lánku");
+        str.append(6, '-');
+        str.append(" << dobre");
+        std::cout << str.utf8_str() << std::endl;
+        std::cout << str.size() << std::endl;
+        for(wq::string::const_iterator i = str.begin(); i != str.end(); i++) {
+            std::cout << *i << std::endl;
+        }
+        std::cout << "\n\n\n";
+        for(wq::string::const_reverse_iterator i = str.rbegin(); i != str.rend(); i++) {
+            std::cout << *i << std::endl;
+        }
     }
-	return 0;
+    catch(wq::exception& e) {
+        std::cout << e.what() << std::endl;
+    }
+    return 0;
 }

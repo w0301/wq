@@ -64,7 +64,7 @@ class WQ_EXPORT string {
 				};
 
 				// index if m_ptr in string's array
-				size_type ptr_index() {
+				size_type ptr_index() const {
 					return m_owner == NULL ? 0 : m_ptr - owner()->s()->m_start;
 				};
 
@@ -108,7 +108,7 @@ class WQ_EXPORT string {
 				bool operator== (const char*) const;
 				bool operator== (char) const;
 				bool operator!= (const value_type& r) const {
-					return !(*this == r);
+					return !((*this) == r);
 				};
 				bool operator!= (const char* r) const {
 					return !(*this == r);
@@ -152,7 +152,7 @@ class WQ_EXPORT string {
 			public:
 				typedef string::value_type value_type;
 				typedef string::reference reference;
-				typedef string::value_type* pointer;
+				typedef reference* pointer;
 				typedef string::difference_type difference_type;
 				typedef std::bidirectional_iterator_tag iterator_category;
 
@@ -169,10 +169,10 @@ class WQ_EXPORT string {
 				};
 
 				// converting
-				value_type* operator-> () {
+				reference* operator-> () {
 					return &m_val;
 				};
-				const value_type* operator-> () const {
+				const_reference* operator-> () const {
 					return &m_val;
 				};
 				reference operator* () {
@@ -184,10 +184,10 @@ class WQ_EXPORT string {
 
 				// comparing
 				bool operator== (const iterator& r) const {
-					return m_val == r.m_val;
+					return m_val.ptr() == r.m_val.ptr();
 				};
 				bool operator!= (const iterator& r) const {
-					return m_val != r.m_val;
+					return m_val.ptr() != r.m_val.ptr();
 				};
 				bool operator< (const iterator& r) const {
 					return m_val.ptr() < r.m_val.ptr();
@@ -203,10 +203,10 @@ class WQ_EXPORT string {
 				};
 
 				bool operator== (const const_iterator& r) const {
-					return m_val == r.m_val;
+					return m_val.ptr() == r.m_val.ptr();
 				};
 				bool operator!= (const const_iterator& r) const {
-					return m_val != r.m_val;
+					return m_val.ptr() != r.m_val.ptr();
 				};
 				bool operator< (const const_iterator& r) const {
 					return m_val.ptr() < r.m_val.ptr();
@@ -285,7 +285,7 @@ class WQ_EXPORT string {
 				};
 
 				// converting
-				const value_type* operator-> () const {
+				const_reference* operator-> () const {
 					return &m_val;
 				};
 				const_reference operator* () const {
@@ -294,10 +294,10 @@ class WQ_EXPORT string {
 
 				// comparing
 				bool operator== (const iterator& r) const {
-					return m_val == r.m_val;
+					return m_val.ptr() == r.m_val.ptr();
 				};
 				bool operator!= (const iterator& r) const {
-					return m_val != r.m_val;
+					return m_val.ptr() != r.m_val.ptr();
 				};
 				bool operator< (const iterator& r) const {
 					return m_val.ptr() < r.m_val.ptr();
@@ -313,10 +313,10 @@ class WQ_EXPORT string {
 				};
 
 				bool operator== (const const_iterator& r) const {
-					return m_val == r.m_val;
+					return m_val.ptr() == r.m_val.ptr();
 				};
 				bool operator!= (const const_iterator& r) const {
-					return m_val != r.m_val;
+					return m_val.ptr() != r.m_val.ptr();
 				};
 				bool operator< (const const_iterator& r) const {
 					return m_val.ptr() < r.m_val.ptr();
@@ -380,6 +380,9 @@ class WQ_EXPORT string {
 
 		// destruction
 		~string();
+
+	    // assignment operator
+		string& operator= (const string&);
 
 		// manipulating with contents
 		void clear();
@@ -448,23 +451,20 @@ class WQ_EXPORT string {
 		string& assign(const string&, size_type, size_type);
 		string& assign(const char*, size_type = -1);
 		string& assign(size_type, value_type);
-		string& assign(size_type size, char c) {
-			return assign(size, value_type(c));
-		};
 
 		// appending
 		string& append(const string&);
 		string& append(const string&, size_type, size_type);
 		string& append(const char*, size_type = -1);
-		string& append(size_type, char);
+		string& append(size_type, value_type);
 
 		// inserting
 		string& insert(size_type, const string&);
 		string& insert(size_type, const string&, size_type, size_type);
 		string& insert(size_type, const char*, size_type = -1);
-		string& insert(size_type, size_type, char);
-		iterator insert(iterator, char);
-		void insert(iterator p, size_type, char);
+		string& insert(size_type, size_type, value_type);
+		iterator insert(iterator, value_type);
+		void insert(iterator, size_type, value_type);
 
 		// erasing
 		string& erase(size_type = 0, size_type = -1);

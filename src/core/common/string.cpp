@@ -309,12 +309,12 @@ string::value_type& string::value_type::rebind(const value_type& n) {
 	\return Returns \b true when characters are identical.
 */
 bool string::value_type::operator== (const value_type& r) const {
-	if(m_owner == r.m_owner && m_ptr == r.m_ptr) {
-		return true;
-	}
-	else if(m_ptr == NULL || r.m_ptr == NULL) {
-		return false;
-	}
+    if(m_ptr == r.m_ptr) {
+        return true;
+    }
+    else if(m_ptr == NULL || r.m_ptr == NULL) {
+         return false;
+    }
 	else if(this == &r) {
 		return true;
 	}
@@ -557,6 +557,13 @@ string::~string() {
 	}
 }
 
+string& string::operator= (const string& r) {
+    if(&r != this) {
+        s_ptr.set_data(r.s_ptr);
+    }
+    return *this;
+}
+
 /*!
 	\brief Clear string.
 
@@ -564,7 +571,11 @@ string::~string() {
 	all allocated memory.
 */
 void string::clear() {
-	if(size() != 0) {
+    if(m_tempbuff != NULL) {
+         s()->m_alloc.deallocate(m_tempbuff);
+         m_tempbuff = NULL;
+     }
+    if(size() != 0) {
 		s_ptr.set_data(new shared_data);
 	}
 }
@@ -607,8 +618,10 @@ string& string::assign(const string& str) {
 }
 
 string& string::assign(const string& str, size_type from, size_type size) {
-	char* start_at = str.s()->m_start + at(from).ptr_index();
-	size = at(from + size).ptr_index();
+    const_iterator start = str.begin() + from;
+    const char* start_at = str.s()->m_start + start->ptr_index();
+    size = (size > str.size() - from) ? str.size() - from : size;
+    size = (start + size)->ptr() - start->ptr();
 	s()->m_len = lowl_assign(start_at, size);
 	return *this;
 }
@@ -625,6 +638,33 @@ string& string::assign(size_type n, value_type c) {
 		s()->m_len += lowl_append(c.ptr(), c.bytes());
 	}
 	return *this;
+}
+
+string& string::append(const string& str) {
+    s()->m_len += lowl_append(str.s()->m_start, str.bytes());
+    return *this;
+}
+
+string& string::append(const string& str, size_type from, size_type size) {
+    const_iterator start = str.begin() + from;
+    const char* start_at = str.s()->m_start + start->ptr_index();
+    size = (size > str.size() - from) ? str.size() - from : size;
+    size = (start + size)->ptr() - start->ptr();
+    s()->m_len+= lowl_append(start_at, size);
+    return *this;
+}
+
+string& string::append(const char* str, size_type size) {
+    s()->m_len += lowl_append(str, size);
+    return *this;
+}
+
+string& string::append(size_type n, value_type c) {
+    lowl_realloc(n);
+    for(; n != 0; n--) {
+        s()->m_len += lowl_append(c.ptr(), c.bytes());
+    }
+    return *this;
 }
 
 /*!
@@ -695,7 +735,11 @@ string::size_type string::chars_count(const char* str, size_type size) {
 	size_type i = 0;
 	while(i < size) {
 		ret_val++;
-		i += octets_count(str, size - i);
+		size_type to_add = octets_count(str + i, size - i);
+		if(to_add == 0) {
+		    throw encode_error();
+		}
+		i += to_add;
 	}
 	return ret_val;
 }
@@ -717,9 +761,9 @@ void string::lowl_realloc(size_type size) {
 
 // this function appends new utf8 chars to string
 string::size_type string::lowl_append(const char* str, size_type str_size) {
-	if(str_size == -1) {
-		str_size = strlen(str);
-	}
+    if(str_size == -1) {
+        str_size = strlen(str);
+    }
 	lowl_realloc(str_size);
 	s()->m_last = s()->m_alloc.copy(s()->m_last, str, str_size);
 
@@ -729,7 +773,7 @@ string::size_type string::lowl_append(const char* str, size_type str_size) {
 
 // this function delete string contents and assign the new one
 string::size_type string::lowl_assign(const char* str, size_type str_size) {
-	clear();
+    s()->m_last = s()->m_start;
 	return lowl_append(str, str_size);
 }
 

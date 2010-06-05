@@ -143,7 +143,7 @@ template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_siz
 template<class T> T* allocator<T>::copy(pointer dest, const_pointer mem, size_type n) {
 	if(type_info<value_type>::is_moveable()) {
 		// this is not overlap safe copying
-		memcpy(static_cast<void*>(dest), static_cast<const void*>(mem), n);
+		memcpy(static_cast<void*>(dest), static_cast<const void*>(mem), type_info<value_type>::size() * n);
 	}
 	else {
 		// same as above but slower (not a movable type) and in my words :)

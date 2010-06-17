@@ -125,9 +125,14 @@ class WQ_EXPORT string {
 				};
 
 			private:
+				friend class string;
 				string* owner() {
 					return m_owner;
 				};
+				char* ptr() {
+				    return m_ptr;
+				};
+
 
 				// pointer to first byte of utf8 character
 				char* m_ptr;
@@ -377,6 +382,7 @@ class WQ_EXPORT string {
 		string();
 		string(const char*, size_type = -1);
 		string(const string&);
+		string(size_type, const_reference);
 
 		// destruction
 		~string();
@@ -409,10 +415,10 @@ class WQ_EXPORT string {
 
 		// iterators
 		iterator begin() {
-			return iterator( value_type(this, const_cast<const string*>(this)->s()->m_start) );
+			return iterator( value_type(this, cs()->m_start) );
 		};
 		iterator end() {
-			return iterator( value_type(this, const_cast<const string*>(this)->s()->m_last) );
+			return iterator( value_type(this, cs()->m_last) );
 		};
 		const_iterator begin() const {
 			return const_iterator( value_type(this, s()->m_start) );
@@ -450,21 +456,24 @@ class WQ_EXPORT string {
 		string& assign(const string&);
 		string& assign(const string&, size_type, size_type);
 		string& assign(const char*, size_type = -1);
-		string& assign(size_type, value_type);
+		string& assign(size_type, const_reference);
 
 		// appending
 		string& append(const string&);
 		string& append(const string&, size_type, size_type);
 		string& append(const char*, size_type = -1);
-		string& append(size_type, value_type);
+		string& append(size_type, const_reference);
 
 		// inserting
 		string& insert(size_type, const string&);
 		string& insert(size_type, const string&, size_type, size_type);
 		string& insert(size_type, const char*, size_type = -1);
-		string& insert(size_type, size_type, value_type);
-		iterator insert(iterator, value_type);
-		void insert(iterator, size_type, value_type);
+		string& insert(size_type, const_reference);
+		string& insert(size_type, size_type, const_reference);
+		iterator insert(iterator, const string&);
+		iterator insert(iterator, const char*, size_type = -1);
+		iterator insert(iterator, const_reference);
+		iterator insert(iterator, size_type, const_reference);
 
 		// erasing
 		string& erase(size_type = 0, size_type = -1);

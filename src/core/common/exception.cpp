@@ -75,7 +75,7 @@ const char* exception::what() const throw() {
 }
 
 /*!
-	\class out_of_range
+	\class range_error
 	\brief Range exception.
 
 	This exception is thrown when an index or an iterator
@@ -90,9 +90,9 @@ const char* exception::what() const throw() {
 	This constructor doesn't do anything special. The biggest
 	thing done by this constructor is calling of std::out_of_range constructor.
 */
-out_of_range::out_of_range() throw()
+range_error::range_error() throw() : wq::core::exception()
 #if WQ_STD_COMPATIBILITY
-	: std::out_of_range("")
+	, std::out_of_range("")
 #endif
 {
 
@@ -103,7 +103,7 @@ out_of_range::out_of_range() throw()
 
 	Standard destructor for virtual class.
 */
-out_of_range::~out_of_range() throw() {
+range_error::~range_error() throw() {
 
 }
 
@@ -113,7 +113,7 @@ out_of_range::~out_of_range() throw() {
 	Description string for this kinf of exception
 	is "index or iterator was out of range".
 */
-const char* out_of_range::what() const throw() {
+const char* range_error::what() const throw() {
 	return "index or iterator was out of range";
 }
 

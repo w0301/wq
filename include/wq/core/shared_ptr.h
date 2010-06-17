@@ -149,6 +149,9 @@ template<class T> void shared_ptr<T>::unshare_data() {
         shared_data *s() {                                              \
             return static_cast<shared_data*>( s_ptr.data() );           \
         };                                                              \
+        const shared_data *cs() {                                       \
+            return static_cast<const shared_data*>( s_ptr.data() );     \
+        };                                                              \
         const shared_data *s() const {                                  \
             return static_cast<const shared_data*>( s_ptr.data() );     \
         };                                                              \

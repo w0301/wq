@@ -452,7 +452,7 @@ string::iterator string::iterator::operator+ (size_type n) const {
 		ret.m_val.rebind(ret.m_val.next());
 		// only first increment to last char is allowed!
 		if(ret.m_val.is_last() && n > 1) {
-			throw out_of_range();
+			throw range_error();
 		}
 	}
 	return ret;
@@ -464,7 +464,7 @@ string::iterator string::iterator::operator- (size_type n) const {
 		ret.m_val.rebind(ret.m_val.prev());
 		// only first decrement to first char is allowed!
 		if(ret.m_val.is_first() && n > 1) {
-			throw out_of_range();
+			throw range_error();
 		}
 	}
 	return ret;
@@ -477,7 +477,7 @@ string::const_iterator string::const_iterator::operator+ (size_type n) const {
 		ret.m_val.rebind(ret.m_val.next());
 		// only first increment to last char is allowed!
 		if(ret.m_val.is_last() && n > 1) {
-			throw out_of_range();
+			throw range_error();
 		}
 	}
 	return ret;
@@ -489,7 +489,7 @@ string::const_iterator string::const_iterator::operator- (size_type n) const {
 		ret.m_val.rebind(ret.m_val.prev());
 		// only first decrement to first char is allowed!
 		if(ret.m_val.is_first() && n > 1) {
-			throw out_of_range();
+			throw range_error();
 		}
 	}
 	return ret;
@@ -546,6 +546,10 @@ string::string(const string& other) : m_tempbuff(NULL), s_ptr(other.s_ptr) {
 
 }
 
+string::string(size_type n, const_reference c) : m_tempbuff(NULL), s_ptr(new shared_data) {
+    assign(n, c);
+}
+
 /*!
 	\brief Destruction of string.
 
@@ -586,13 +590,13 @@ void string::clear() {
 	This function returns character of string at index \a i.
 	Character is returned in form of reference and can be manipulate
 	by all functions in class value_type. If there is no character
-	at index \a i exception wq::core::out_of_range is thrown.
+	at index \a i exception wq::core::range_error is thrown.
 
 	\sa operator[](), at(size_type) const;
 */
 string::reference string::at(size_type i) {
 	if(i > size()) {
-		throw out_of_range();
+		throw range_error();
 	}
 	return *(begin() + i);
 }
@@ -607,7 +611,7 @@ string::reference string::at(size_type i) {
 */
 string::const_reference string::at(size_type i) const {
 	if(i > size()) {
-		throw out_of_range();
+		throw range_error();
 	}
 	return *(begin() + i);
 }
@@ -631,7 +635,7 @@ string& string::assign(const char* str, size_type size) {
 	return *this;
 }
 
-string& string::assign(size_type n, value_type c) {
+string& string::assign(size_type n, const_reference c) {
 	clear();
 	lowl_realloc(n);
 	for(; n != 0; n--) {
@@ -650,7 +654,7 @@ string& string::append(const string& str, size_type from, size_type size) {
     const char* start_at = str.s()->m_start + start->ptr_index();
     size = (size > str.size() - from) ? str.size() - from : size;
     size = (start + size)->ptr() - start->ptr();
-    s()->m_len+= lowl_append(start_at, size);
+    s()->m_len += lowl_append(start_at, size);
     return *this;
 }
 
@@ -659,12 +663,87 @@ string& string::append(const char* str, size_type size) {
     return *this;
 }
 
-string& string::append(size_type n, value_type c) {
+string& string::append(size_type n, const_reference c) {
     lowl_realloc(n);
     for(; n != 0; n--) {
         s()->m_len += lowl_append(c.ptr(), c.bytes());
     }
     return *this;
+}
+
+string& string::insert(size_type i, const string& str) {
+    s()->m_len += lowl_insert(at(i).ptr(), str.s()->m_start, str.bytes());
+    return *this;
+}
+
+string& string::insert(size_type i, const string& str, size_type from, size_type size) {
+    const_iterator start = str.begin() + from;
+    const char* start_at = str.s()->m_start + start->ptr_index();
+    size = (size > str.size() - from) ? str.size() - from : size;
+    size = (start + size)->ptr() - start->ptr();
+    s()->m_len += lowl_insert(at(i).ptr(), start_at, size);
+    return *this;
+}
+
+string& string::insert(size_type i, const char* str, size_type size) {
+    s()->m_len += lowl_insert(at(i).ptr(), str, size);
+    return *this;
+}
+
+string& string::insert(size_type i, const_reference c) {
+    s()->m_len += lowl_insert(at(i).ptr(), c, c.bytes());
+    return *this;
+}
+
+string& string::insert(size_type i, size_type n, const_reference c) {
+    // we will use temporary buffer for this inserting, this avoid
+    // repeated moving of memory
+    string ins_str(n, c);
+    s()->m_len += lowl_insert(at(i).ptr(), ins_str.s()->m_start, ins_str.bytes());
+    return *this;
+}
+
+string::iterator string::insert(iterator iter, const string& str) {
+    s()->m_len += lowl_insert(iter->ptr(), str.s()->m_start, str.bytes());
+    return iter;
+}
+
+string::iterator string::insert(iterator iter, const char* str, size_type size) {
+    s()->m_len += lowl_insert(iter->ptr(), str, size);
+    return iter;
+}
+
+string::iterator string::insert(iterator iter, const_reference c) {
+    s()->m_len += lowl_insert(iter->ptr(), c, c.bytes());
+    return iter;
+}
+
+string::iterator string::insert(iterator iter, size_type n, const_reference c) {
+    // we will use temporary buffer for this inserting, this avoid
+    // repeated moving of memory
+    string ins_str(n, c);
+    s()->m_len += lowl_insert(iter->ptr(), ins_str.s()->m_start, ins_str.bytes());
+    return iter;
+}
+
+string& string::erase(size_type from, size_type n) {
+    if(n == -1) {
+        n = size() - from;
+    }
+    iterator start = begin() + from;
+    iterator end = start + n;
+    s()->m_len -= lowl_erase(start->ptr(), end->ptr());
+    return *this;
+}
+
+string::iterator string::erase(iterator iter) {
+    s()->m_len -= lowl_erase(iter->ptr(), (iter + 1)->ptr());
+    return iter->ptr() >= cs()->m_last ? end() : iter;
+}
+
+string::iterator string::erase(iterator start_iter, iterator end_iter) {
+    s()->m_len -= lowl_erase(start_iter->ptr(), end_iter->ptr());
+    return start_iter->ptr() >= cs()->m_last ? end() : start_iter;
 }
 
 /*!
@@ -803,11 +882,14 @@ string::size_type string::lowl_erase(char* first, char* last) {
 	if(first == NULL || last == NULL) {
 		return 0;
 	}
+	// how many characters will we erase?
+	size_type erased = chars_count(first, last - first);
+
 	// rewriting deleted data
 	s()->m_last = s()->m_alloc.ocopy(first, last, s()->m_last - last);
 
 	// erased length
-	return chars_count(first, last - first - 1);
+	return erased;
 }
 
 // replace bytes between 'first' and 'last' with str

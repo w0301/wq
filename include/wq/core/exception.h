@@ -43,17 +43,20 @@ class WQ_EXPORT exception
 };
 
 // range error exception
-class WQ_EXPORT out_of_range
+class WQ_EXPORT range_error : public wq::core::exception
 #if WQ_STD_COMPATIBILITY
-	: public std::out_of_range
+	, public std::out_of_range
 #endif
 {
 		public:
-			out_of_range() throw();
-			virtual ~out_of_range() throw();
+            range_error() throw();
+			virtual ~range_error() throw();
 
 			virtual const char* what() const throw();
 };
+
+// define for std compatibility
+typedef range_error out_of_range;
 
 #define WQ_NO_THROW(...) try { __VA_ARGS__ } catch(...) { }
 

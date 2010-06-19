@@ -50,6 +50,16 @@ int main() {
 
         std::cout << str.utf8_str() << " >> " << str.size() << std::endl;
 
+        str.resize(9);
+
+        std::cout << str.utf8_str() << " >> " << str.size() << std::endl;
+
+        std::cout << str.utf8_str() << ", capacity >> " << str.capacity() << std::endl;
+
+        str.reserve(43);
+
+        std::cout << str.utf8_str() << ", capacity >> " << str.capacity() << std::endl;
+
         char* buff = new char[str.bytes() + 1];
         *(buff + str.copy(buff, str.size())) = '\0';
 

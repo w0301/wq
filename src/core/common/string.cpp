@@ -586,6 +586,19 @@ void string::clear() {
 	}
 }
 
+void string::reserve(size_type least_size) {
+    lowl_realloc(least_size);
+}
+
+void string::resize(size_type new_size, const_reference new_c) {
+    if(new_size > size()) {
+        append(new_size - size(), new_c);
+    }
+    else {
+        erase(begin() + new_size, begin() + size());
+    }
+}
+
 /*!
 	\brief Returns character.
 
@@ -807,7 +820,7 @@ string& string::replace(iterator start, iterator end, size_type count, const_ref
 }
 
 /*!
-    \brief Copy to buffer.
+    \brief Copies to buffer.
 
     This function copies data from string to \b char* buffer.
     Remember that this function doesn't append \b '\0' character.
@@ -833,7 +846,7 @@ string::size_type string::copy(char* out_str, size_type n, size_type from) const
 }
 
 /*!
-    \brief Swap contents.
+    \brief Swaps contents.
 
     This function swaps the contents between two string objects.
 
@@ -847,7 +860,23 @@ void string::swap(string& with) {
 }
 
 /*!
-	\brief Convert string.
+    \brief Returns substring of string.
+
+    This function returns string which contains particular
+    sequence of string.
+
+    \param from First character to choose for new string.
+    \param n Number of character in new string.
+    \return New string containing chosen sequence.
+*/
+string string::substr(size_type from, size_type n) const {
+    string ret_str;
+    ret_str.assign(*this, from, n);
+    return ret_str;
+}
+
+/*!
+	\brief Converts string.
 
 	Returns utf8 null terminated string. Returned string
 	is valid until next *_str() function call or until
@@ -929,9 +958,11 @@ void string::lowl_realloc(size_type size) {
 	size_type old_capacity = s()->m_end - s()->m_start;
 	size_type old_size = s()->m_last - s()->m_start;
 	if(old_capacity < old_size + size) {
-		size_type new_capacity = old_capacity == 0 ? size :
-								(old_capacity * 2 >= old_size + size ?
-								 old_capacity * 2 : old_size + size);
+	    // finding new capacity - always by multiplying with 2
+	    size_type least_capacity = old_size + size;
+	    size_type new_capacity = old_capacity == 0 ? 1 : old_capacity;
+	    while(new_capacity < least_capacity) new_capacity = new_capacity * 2;
+
 		s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, new_capacity);
 		s()->m_end = s()->m_start + new_capacity;
 		s()->m_last = s()->m_start + old_size;
@@ -940,14 +971,20 @@ void string::lowl_realloc(size_type size) {
 
 // this function appends new utf8 chars to string
 string::size_type string::lowl_append(const char* str, size_type str_size) {
-    if(str_size == -1) {
+    const char null_arr[] = "\0";
+    if(str == NULL) {
+        str_size = 1;
+        str = null_arr;
+    }
+    else if(str_size == -1) {
         str_size = strlen(str);
     }
-	lowl_realloc(str_size);
-	s()->m_last = s()->m_alloc.copy(s()->m_last, str, str_size);
 
-	// returning length of inserted string
-	return chars_count(str, str_size);
+    lowl_realloc(str_size);
+    s()->m_last = s()->m_alloc.copy(s()->m_last, str, str_size);
+
+    // returning length of inserted string
+    return chars_count(str, str_size);
 }
 
 // this function delete string contents and assign the new one
@@ -958,23 +995,28 @@ string::size_type string::lowl_assign(const char* str, size_type str_size) {
 
 // this function inserts 'str' at 'at' position (moving all chars after 'at' (including 'at') to right)
 string::size_type string::lowl_insert(char* at, const char* str, size_type str_size) {
-	if(str_size == -1) {
-		str_size = strlen(str);
-	}
+    const char null_arr[] = "\0";
+    if(str == NULL) {
+        str_size = 1;
+        str = null_arr;
+    }
+    else if(str_size == -1) {
+        str_size = strlen(str);
+    }
 
-	// appending 'str_size' zero characters + assure validity of 'at'
-	difference_type dist = at - s()->m_start;
-	lowl_realloc(str_size);
-	at = s()->m_start + dist;
+    // appending 'str_size' zero characters + assure validity of 'at'
+    difference_type dist = at - s()->m_start;
+    lowl_realloc(str_size);
+    at = s()->m_start + dist;
 
-	// copying data to right
-	s()->m_last = s()->m_alloc.ocopy(at + str_size, at, s()->m_last - at);
+    // copying data to right
+    s()->m_last = s()->m_alloc.ocopy(at + str_size, at, s()->m_last - at);
 
-	// copying new data to right place
-	s()->m_alloc.copy(at, str, str_size);
+    // copying new data to right place
+    s()->m_alloc.copy(at, str, str_size);
 
-	// returning length
-	return chars_count(str, str_size);
+    // returning length
+    return chars_count(str, str_size);
 }
 
 // delete characters between two pointers that points to bytes in string
@@ -994,7 +1036,12 @@ string::size_type string::lowl_erase(char* first, char* last) {
 
 // replace bytes between 'first' and 'last' with str
 string::size_type string::lowl_replace(char* first, char* last, const char* str, size_type str_size) {
-	if(str_size == -1) {
+	const char null_arr[] = "\0";
+    if(str == NULL) {
+	    str_size = 1;
+	    str = null_arr;
+	}
+	else if(str_size == -1) {
 		str_size = strlen(str);
 	}
 	size_type rep_size = last - first;

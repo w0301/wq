@@ -60,7 +60,7 @@ class WQ_EXPORT string {
 
 				// count of bytes of character
 				size_type bytes() const {
-					return m_owner == NULL ? strlen(m_ptr) : owner()->octets_count(m_ptr);
+					return m_owner == NULL ? (m_ptr != NULL ? strlen(m_ptr) : 1) : owner()->octets_count(m_ptr);
 				};
 
 				// index if m_ptr in string's array
@@ -413,6 +413,10 @@ class WQ_EXPORT string {
 			return size() == 0;
 		};
 
+		// size, capacity manipulation
+		void reserve(size_type = 0);
+		void resize(size_type, const_reference = const_reference());
+
 		// iterators
 		iterator begin() {
 			return iterator( value_type(this, cs()->m_start) );
@@ -490,9 +494,12 @@ class WQ_EXPORT string {
 		string& replace(iterator, iterator, const char*, size_type = -1);
 		string& replace(iterator, iterator, size_type, const_reference);
 
+		// finding - TODO later
+
 		// other functions
 		size_type copy(char*, size_type, size_type = 0) const;
 		void swap(string&);
+		string substr(size_type = 0, size_type = -1) const;
 
 		// inline functions and operators for appending data
 		void push_back(const_reference c) {

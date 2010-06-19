@@ -387,7 +387,7 @@ class WQ_EXPORT string {
 		// destruction
 		~string();
 
-	    // assignment operator
+	    // assignment operators
 		string& operator= (const string&);
 
 		// manipulating with contents
@@ -480,7 +480,33 @@ class WQ_EXPORT string {
 		iterator erase(iterator);
 		iterator erase(iterator, iterator);
 
-		// replacing - TODO later
+		// replacing - index versions (start position + size) and iterators version
+		string& replace(size_type, size_type, const string&);
+		string& replace(size_type, size_type, const string&, size_type, size_type);
+		string& replace(size_type, size_type, const char*, size_type = -1);
+		string& replace(size_type, size_type, size_type, const_reference);
+		string& replace(iterator, iterator, const string&);
+		string& replace(iterator, iterator, const_iterator, const_iterator);
+		string& replace(iterator, iterator, const char*, size_type = -1);
+		string& replace(iterator, iterator, size_type, const_reference);
+
+		// other functions
+		size_type copy(char*, size_type, size_type = 0) const;
+		void swap(string&);
+
+		// inline functions and operators for appending data
+		void push_back(const_reference c) {
+		    append(1, c);
+		};
+		string& operator+= (const string& str) {
+		    return append(str);
+		};
+		string& operator+= (const char* str) {
+		    return append(str);
+		};
+		string& operator+= (const_reference c) {
+		    return append(c);
+		};
 
 		// converting
 		const char* utf8_str() const;
@@ -502,7 +528,7 @@ class WQ_EXPORT string {
 				mutable allocator_type m_alloc;
 		};
 
-		// some private helpful functions
+		// some helpful private functions
 		size_type bytes_left(const char* from) const {
 			return s()->m_last - from;
 		};
@@ -524,6 +550,9 @@ class WQ_EXPORT string {
 
 		// temp buffer for *_str functions
 		mutable char* m_tempbuff;
+
+		// constant for greatest or auto size
+		static const size_type npos;
 
 	protected:
 		WQ_NEW_SHARED_DATA();

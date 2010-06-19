@@ -517,6 +517,8 @@ string::shared_data::~shared_data() {
 
 
 // string class
+static const string::size_type npos = -1;
+
 /*!
 	\brief Constructs string.
 
@@ -722,7 +724,7 @@ string::iterator string::insert(iterator iter, size_type n, const_reference c) {
     // we will use temporary buffer for this inserting, this avoid
     // repeated moving of memory
     string ins_str(n, c);
-    s()->m_len += lowl_insert(iter->ptr(), ins_str.s()->m_start, ins_str.bytes());
+    s()->m_len += lowl_insert(iter->ptr(), ins_str.cs()->m_start, ins_str.bytes());
     return iter;
 }
 
@@ -744,6 +746,104 @@ string::iterator string::erase(iterator iter) {
 string::iterator string::erase(iterator start_iter, iterator end_iter) {
     s()->m_len -= lowl_erase(start_iter->ptr(), end_iter->ptr());
     return start_iter->ptr() >= cs()->m_last ? end() : start_iter;
+}
+
+string& string::replace(size_type from, size_type n, const string& with) {
+    iterator start = begin() + from;
+    iterator end = start + n;
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), with.cs()->m_start, with.bytes());
+    return *this;
+}
+
+string& string::replace(size_type from, size_type n, const string& with, size_type from2, size_type n2) {
+    iterator start = begin() + from;
+    iterator end = start + n;
+    const_iterator start2 = with.begin() + from2;
+    const_iterator end2 = start2 + n2;
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), start2->ptr(), (end2->ptr() - start2->ptr()));
+    return *this;
+}
+
+string& string::replace(size_type from, size_type n, const char* str, size_type size) {
+    iterator start = begin() + from;
+    iterator end = start + n;
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), str, size);
+    return *this;
+}
+
+string& string::replace(size_type from, size_type n, size_type count, const_reference c) {
+    // we will use temporary buffer for this inserting, this avoid
+    // repeated moving of memory
+    string rep_str(count, c);
+
+    iterator start = begin() + from;
+    iterator end = start + n;
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), rep_str.cs()->m_start, rep_str.bytes());
+    return *this;
+}
+
+string& string::replace(iterator start, iterator end, const string& with) {
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), with.cs()->m_start, with.bytes());
+    return *this;
+}
+
+string& string::replace(iterator start, iterator end, const_iterator start2, const_iterator end2) {
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), start2->ptr(), end2->ptr() - start2->ptr());
+    return *this;
+}
+
+string& string::replace(iterator start, iterator end, const char* str, size_type size) {
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), str, size);
+    return *this;
+}
+
+string& string::replace(iterator start, iterator end, size_type count, const_reference c) {
+    // we will use temporary buffer for this inserting, this avoid
+    // repeated moving of memory
+    string rep_str(count, c);
+
+    s()->m_len += lowl_replace(start->ptr(), end->ptr(), rep_str.cs()->m_start, rep_str.bytes());
+    return *this;
+}
+
+/*!
+    \brief Copy to buffer.
+
+    This function copies data from string to \b char* buffer.
+    Remember that this function doesn't append \b '\0' character.
+
+    \param out_str Buffer in which data will be stored.
+    \param n Number of characters to copy.
+    \param from Index of first character that will be copied.
+    \return This function returns number of bytes copied (no characters).
+*/
+string::size_type string::copy(char* out_str, size_type n, size_type from) const {
+    const_iterator start = begin() + from;
+    const_iterator end = start + n;
+    size_type copied = 0;
+    for( ; start != end; start++) {
+        // for every character we have to copy all bytes
+        size_type stop_after = start->bytes();
+        for(size_type i = 0; i != stop_after; i++) {
+            out_str[copied + i] = *(start->ptr() + i);
+        }
+        copied += stop_after;
+    }
+    return copied;
+}
+
+/*!
+    \brief Swap contents.
+
+    This function swaps the contents between two string objects.
+
+    \param with Object with which to swap contents.
+*/
+void string::swap(string& with) {
+    // this is really fast because of implicit sharing
+    string tmp_str = with;
+    with = *this;
+    *this = tmp_str;
 }
 
 /*!

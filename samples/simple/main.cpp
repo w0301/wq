@@ -45,6 +45,27 @@ int main() {
         str.erase(2, 1);
 
         std::cout << str.utf8_str() << " >> " << str.size() << std::endl;
+
+        str.replace(2, 4, wq::string("|<-->|"), 1, 4);
+
+        std::cout << str.utf8_str() << " >> " << str.size() << std::endl;
+
+        char* buff = new char[str.bytes() + 1];
+        *(buff + str.copy(buff, str.size())) = '\0';
+
+        std::cout << str.utf8_str() << " >> " << str.size() << std::endl;
+        std::cout << buff << std::endl;
+
+        wq::string str1 = "contents of str1";
+        wq::string str2 = "contents of str2";
+
+        std::cout << "str1: " << str1.utf8_str() << std::endl;
+        std::cout << "str2: " << str2.utf8_str() << std::endl;
+
+        str1.swap(str2);
+
+        std::cout << "str1: " << str1.utf8_str() << std::endl;
+        std::cout << "str2: " << str2.utf8_str() << std::endl;
     }
     catch(wq::exception& e) {
         std::cout << e.what() << std::endl;

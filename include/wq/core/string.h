@@ -20,6 +20,7 @@
 #define WQ_STRING_H
 
 #include "wq/defs.h"
+#include "wq/core/encoder.h"
 #include "wq/core/allocator.h"
 #include "wq/core/shared_ptr.h"
 
@@ -44,114 +45,147 @@ class WQ_EXPORT string {
 		//! Type which describe result of math operations over iterators.
 		typedef allocator_type::difference_type difference_type;
 
-		// class which points to one character of utf8 string
+		// class which holds one unicode character - used only when getting value
 		class value_type {
 			public:
-				// construction
-				value_type() : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) { };
+				// basic construction
+				value_type();
+				value_type(int val);
+				value_type(char, const text_encoder& = utf8_encoder());
+				value_type(wq::uint32 val) : m_val(val) { };
+				value_type(const char*);
+				value_type(wq::uint16, wq::uint16);
+
+				// coping
 				value_type(const value_type&);
-				value_type(const char*, size_type = -1);
-				value_type(char);
-				value_type(string*, char*);
-				value_type(const string*, char*);
+				value_type& operator= (const value_type&);
 
-				// destruction
-				~value_type();
-
-				// count of bytes of character
+				// convince functions
 				size_type bytes() const {
-					return m_owner == NULL ? (m_ptr != NULL ? strlen(m_ptr) : 1) : owner()->octets_count(m_ptr);
+				    return octets_count(m_val);
 				};
 
-				// index if m_ptr in string's array
-				size_type ptr_index() const {
-					return m_owner == NULL ? 0 : m_ptr - owner()->s()->m_start;
-				};
+                // assignment
+				value_type& operator= (char);
+				value_type& operator= (wq::uint32);
+				value_type& operator= (const char*);
 
-				// return m_ptr as const pointer
-				const char* ptr() const {
-					return m_ptr;
+                // comparing
+				bool operator== (char r) const {
+				    return m_val <= 0xFF && m_val == wq::uint32(r);
 				};
-
-                // constant returning of m_owner
-                const string* owner() const {
-                    return m_owner;
+				bool operator== (const char* r) const {
+				    return m_val == decode_utf8(r);
+				};
+				bool operator== (const value_type& r) const {
+                    return m_val == r.m_val;
                 };
 
-				// return true if no character is assigned
-				bool is_null() const {
-					return m_ptr == NULL;
-				};
+				// reverse comparing
+                bool operator!= (char r) const {
+                    return !(*this == r);
+                };
+                bool operator!= (const char* r) const {
+                    return !(*this == r);
+                };
+                bool operator!= (const value_type& r) const {
+                    return !((*this) == r);
+                };
 
-				// return if char is first/last in string
-				bool is_first() const {
-					return m_owner == NULL ? true : owner()->s()->m_start == m_ptr;
-				};
-				bool is_last() const {
-					return m_owner == NULL ? true : owner()->s()->m_last == m_ptr;
-				};
+                // conversion
+                char ascii() const;
+                const char* utf8() const;
+                wq::pair<wq::uint16, wq::uint16> utf16() const;
+                wq::uint32 utf32() const {
+                    return m_val;
+                };
 
-				// next/previous character in string
-				value_type next() const;
-				value_type prev() const;
+                // implicit conversion
+                operator const char*() const {
+                    return utf8();
+                };
 
-				// assignment
-				value_type& operator= (const value_type&);
-				value_type& operator= (const char*);
-				value_type& operator= (char);
-
-                // change value without replacing in string
-                value_type& rebind(const value_type&);
-
-				// comparing
-				bool operator== (const value_type&) const;
-				bool operator== (const char*) const;
-				bool operator== (char) const;
-				bool operator!= (const value_type& r) const {
-					return !((*this) == r);
-				};
-				bool operator!= (const char* r) const {
-					return !(*this == r);
-				};
-				bool operator!= (char r) const {
-					return !(*this == r);
-				};
-
-				// conversion
-				const char* utf8() const;
-				char ch() const;
-				operator const char*() const {
-					return utf8();
-				};
+                // special characters
+                static value_type repl_char() {
+                    return value_type(0xFFFD);
+                };
 
 			private:
-				friend class string;
-				string* owner() {
-					return m_owner;
-				};
-				char* ptr() {
-				    return m_ptr;
-				};
+                friend class string;
 
+                // decoding functions
+                static size_type octets_count(char);
+                static size_type octets_count(wq::uint32);
+                static wq::uint32 decode_utf8(const char*);
+                static wq::uint32 decode_utf16(wq::uint16, wq::uint16);
 
-				// pointer to first byte of utf8 character
-				char* m_ptr;
+                // this holds number of unicode character
+                wq::uint32 m_val;
 
-				// pointer to owner of character above
-				string* m_owner;
-
-				// temporary buffer for convert functions
-				mutable char* m_tempbuff;
+                // temporary buffers for convert functions - ends with 0
+                mutable char m_utf8tmp[5];
 		};
-		friend class value_type;
 
-		//! Reference type for class.
-		typedef value_type reference;
+	    class iterator;
+	    class const_iterator;
 
-		//! Constant reference type for class.
-		typedef const reference const_reference;
+	    //! Constant reference type for class.
+	    typedef const value_type& const_reference;
 
-		class const_iterator;
+	    //! Reference type for class.
+	    friend class reference;
+	    class reference : public value_type {
+	        public:
+	            // construction
+	            reference(string*, char*);
+	            reference(const string*, char*);
+	            reference(const reference&);
+
+	            // assignment with replace in string
+	            reference& operator= (const reference&);
+	            reference& operator= (const_reference);
+	            reference& operator= (const char* c) {
+	                return operator= ( value_type(c) );
+	            };
+	            reference& operator= (char c) {
+                    return operator= ( value_type(c) );
+                };
+
+	        private:
+                // to which string will we point
+                string* m_owner;
+
+                // and to which character
+                char* m_ptr;
+
+                // some functions for iterator and string classes
+                friend class string;
+                friend class iterator;
+                friend class const_iterator;
+
+	            string* owner() {
+	                return m_owner;
+	            };
+	            const string* owner() const {
+	                return m_owner;
+	            };
+                char* ptr() {
+                    return m_ptr;
+                };
+                const char* ptr() const {
+                    return m_ptr;
+                };
+                bool is_first() const {
+                    return ptr() == owner()->s()->m_start;
+                };
+                bool is_last() const {
+                    return ptr() == owner()->s()->m_last;
+                };
+                void rebind(const reference&);
+                reference next() const;
+                reference prev() const;
+		};
+
 		//! Class which represent special iterator.
 		class iterator {
 			public:
@@ -162,8 +196,7 @@ class WQ_EXPORT string {
 				typedef std::bidirectional_iterator_tag iterator_category;
 
 				// creation and copying
-				iterator() { };
-				iterator(const value_type& val) : m_val(val) { };
+				iterator(const reference& val) : m_val(val) { };
 				iterator(const iterator& from) : m_val(from.m_val) { };
 				iterator& operator= (const iterator& r) {
 					if(&r != this) {
@@ -177,7 +210,7 @@ class WQ_EXPORT string {
 				reference* operator-> () {
 					return &m_val;
 				};
-				const_reference* operator-> () const {
+				const value_type* operator-> () const {
 					return &m_val;
 				};
 				reference operator* () {
@@ -228,11 +261,9 @@ class WQ_EXPORT string {
 
 				// distance of iterators
 				difference_type operator- (const iterator& r) const {
-					return m_val.ptr() - r.m_val.ptr();
+				    return operator- ( const_iterator(r) );
 				};
-				difference_type operator- (const const_iterator& r) const {
-					return m_val.ptr() - r.m_val.ptr();
-				};
+				difference_type operator- (const const_iterator&) const;
 
 				// incrementing and decrementing
 				// all this operations are const!
@@ -258,8 +289,17 @@ class WQ_EXPORT string {
 				};
 
 			private:
-				value_type m_val;
-				friend class const_iterator;
+				reference m_val;
+
+                // functions for friends
+                friend class string;
+                friend class const_iterator;
+                char* ptr() {
+                    return m_val.ptr();
+                };
+                const char* ptr() const {
+                    return m_val.ptr();
+                };
 		};
 
 		//! Class which represent special constant iterator.
@@ -272,8 +312,7 @@ class WQ_EXPORT string {
 				typedef std::bidirectional_iterator_tag iterator_category;
 
 				// creation and copying
-				const_iterator() { };
-				const_iterator(const value_type& val) : m_val(val) { };
+				const_iterator(const reference& val) : m_val(val) { };
 				const_iterator(const const_iterator& from) : m_val(from.m_val) { };
 				const_iterator& operator= (const const_iterator& r) {
 					if(&r != this) {
@@ -290,7 +329,7 @@ class WQ_EXPORT string {
 				};
 
 				// converting
-				const_reference* operator-> () const {
+				const value_type* operator-> () const {
 					return &m_val;
 				};
 				const_reference operator* () const {
@@ -338,11 +377,9 @@ class WQ_EXPORT string {
 
 				// distance of iterators
 				difference_type operator- (const iterator& r) const {
-					return m_val.ptr() - r.m_val.ptr();
+					return operator- ( const_iterator(r) );
 				};
-				difference_type operator- (const const_iterator& r) const {
-					return m_val.ptr() - r.m_val.ptr();
-				};
+				difference_type operator- (const const_iterator&) const;
 
 				// incrementing and decrementing
 				// all this operations are const!
@@ -368,8 +405,14 @@ class WQ_EXPORT string {
 				};
 
 			private:
-				value_type m_val;
+				reference m_val;
+
+				// functions for friends
+				friend class string;
 				friend class iterator;
+				const char* ptr() const {
+				    return m_val.ptr();
+				};
 		};
 
 		//! Reverse iterator type.
@@ -380,9 +423,10 @@ class WQ_EXPORT string {
 
 		// construction
 		string();
-		string(const char*, size_type = -1);
+		string(const char*, size_type = npos, const text_encoder& = utf8_encoder());
 		string(const string&);
 		string(size_type, const_reference);
+		string(const_iterator, const_iterator);
 
 		// destruction
 		~string();
@@ -415,20 +459,20 @@ class WQ_EXPORT string {
 
 		// size, capacity manipulation
 		void reserve(size_type = 0);
-		void resize(size_type, const_reference = const_reference());
+		void resize(size_type, const_reference = value_type());
 
 		// iterators
 		iterator begin() {
-			return iterator( value_type(this, cs()->m_start) );
+			return iterator( reference(this, cs()->m_start) );
 		};
 		iterator end() {
-			return iterator( value_type(this, cs()->m_last) );
+			return iterator( reference(this, cs()->m_last) );
 		};
 		const_iterator begin() const {
-			return const_iterator( value_type(this, s()->m_start) );
+			return const_iterator( reference(this, s()->m_start) );
 		};
 		const_iterator end() const {
-			return const_iterator( value_type(this, s()->m_last) );
+			return const_iterator( reference(this, s()->m_last) );
 		};
 
 		// reverse iterators
@@ -445,7 +489,6 @@ class WQ_EXPORT string {
 			return const_reverse_iterator( begin() );
 		};
 
-
 		// characters returning
 		reference at(size_type);
 		const_reference at(size_type) const;
@@ -457,42 +500,58 @@ class WQ_EXPORT string {
 		};
 
 		// assigning
-		string& assign(const string&);
-		string& assign(const string&, size_type, size_type);
-		string& assign(const char*, size_type = -1);
+		string& assign(const string&, size_type = 0, size_type = npos);
+		string& assign(const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		    return assign( string(str, size, enc) );
+		};
 		string& assign(size_type, const_reference);
+		string& assign(const_iterator, const_iterator);
 
 		// appending
-		string& append(const string&);
-		string& append(const string&, size_type, size_type);
-		string& append(const char*, size_type = -1);
+		string& append(const string&, size_type = 0, size_type = npos);
+		string& append(const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		    return append( string(str, size, enc) );
+		};
 		string& append(size_type, const_reference);
+		string& append(const_iterator, const_iterator);
 
 		// inserting
-		string& insert(size_type, const string&);
-		string& insert(size_type, const string&, size_type, size_type);
-		string& insert(size_type, const char*, size_type = -1);
-		string& insert(size_type, const_reference);
-		string& insert(size_type, size_type, const_reference);
-		iterator insert(iterator, const string&);
-		iterator insert(iterator, const char*, size_type = -1);
-		iterator insert(iterator, const_reference);
+		string& insert(size_type, const string&, size_type = 0, size_type = npos);
+		string& insert(size_type i, const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		    return insert( i, string(str, size, enc) );
+		};
+		string& insert(size_type i, size_type n, const_reference c) {
+		    return insert( i, string(n, c) );
+		}
+		iterator insert(iterator, const string&, size_type = 0, size_type = npos);
+		iterator insert(iterator, const char*, size_type = npos, const text_encoder& = utf8_encoder());
 		iterator insert(iterator, size_type, const_reference);
 
 		// erasing
-		string& erase(size_type = 0, size_type = -1);
+		string& erase(size_type = 0, size_type = npos);
 		iterator erase(iterator);
 		iterator erase(iterator, iterator);
 
 		// replacing - index versions (start position + size) and iterators version
-		string& replace(size_type, size_type, const string&);
-		string& replace(size_type, size_type, const string&, size_type, size_type);
-		string& replace(size_type, size_type, const char*, size_type = -1);
-		string& replace(size_type, size_type, size_type, const_reference);
-		string& replace(iterator, iterator, const string&);
-		string& replace(iterator, iterator, const_iterator, const_iterator);
-		string& replace(iterator, iterator, const char*, size_type = -1);
-		string& replace(iterator, iterator, size_type, const_reference);
+		string& replace(size_type, size_type, const string&, size_type = 0, size_type = npos);
+		string& replace(size_type from, size_type n, const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		    return replace( from, n, string(str, size, enc) );
+		};
+		string& replace(size_type from, size_type n, size_type count, const_reference c) {
+		    return replace( from, n, string(count, c) );
+		};
+		string& replace(iterator from, iterator to, const string& str) {
+		    return replace(from - begin(), to - from, str);
+		};
+		string& replace(iterator from, iterator to, const_iterator from2, const_iterator to2) {
+		    return replace( from, to, string(from2, to2) );
+		};
+		string& replace(iterator from, iterator to, const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		    return replace(from - begin(), to - from, str, size, enc);
+		};
+		string& replace(iterator from, iterator to, size_type count, const_reference c) {
+		    return replace(from - begin(), to - from, count, c);
+		};
 
 		// finding - TODO later
 
@@ -532,33 +591,14 @@ class WQ_EXPORT string {
 				char* m_last;
 				char* m_end;
 				size_type m_len;
-				mutable allocator_type m_alloc;
+				static allocator_type m_alloc;
 		};
-
-		// some helpful private functions
-		size_type bytes_left(const char* from) const {
-			return s()->m_last - from;
-		};
-		static size_type octets_count(const char*, size_type);
-		size_type octets_count(const char* c) const {
-			return octets_count(c, bytes_left(c));
-		};
-		static size_type chars_count(const char*, size_type = -1);
-
-		// low level functions - these functions do not touch
-		// 's()->m_len' and if they return they return count
-		// of characters inserted/deleted or new count - depends on kind of functions
-		void lowl_realloc(size_type);
-		size_type lowl_append(const char*, size_type = -1);
-		size_type lowl_assign(const char*, size_type = -1);
-		size_type lowl_insert(char*, const char*, size_type = -1);
-		size_type lowl_erase(char*, char*);
-		size_type lowl_replace(char*, char*, const char*, size_type = -1);
 
 		// temp buffer for *_str functions
 		mutable char* m_tempbuff;
 
-		// constant for greatest or auto size
+	public:
+		//! Constant that indicates greatest possible or automatic size.
 		static const size_type npos;
 
 	protected:

@@ -137,6 +137,22 @@ template<typename T> class flags {
 		uint m_flags;
 };
 
+// class for pairs
+template<class T1, class T2> class pair {
+    public:
+        typedef T1 first_type;
+        typedef T2 second_type;
+        pair() { };
+        pair(first_type val1, second_type val2) : first(val1), second(val2) { };
+
+        first_type first;
+        second_type second;
+};
+
+template<class T1, class T2> pair<T1, T2> make_pair(T1 val1, T2 val2) {
+    return pair<T1, T2>(val1, val2);
+}
+
 // macros for using flags class
 #define WQ_DECLARE_FLAGS(newTypeForFlags, enumType)	\
 	typedef wq::flags<enumType> newTypeForFlags;

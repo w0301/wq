@@ -17,7 +17,6 @@
 ****************************************************************************/
 
 #include "wq/core/string.h"
-#include "wq/core/encoder.h"
 
 #include <cstring>
 
@@ -27,17 +26,16 @@ namespace core {
 // string::value_type class
 /*!
 	\class string::value_type
-	\brief UTF-8 character handler.
+	\brief Unicode character handler.
 
-	This class is used to point to existing character
-	in any wq::core::string object ("reference object") or
-	to just keep UTF-8 formated character ("normal object").
+    This class holds Unicode character and allows opration
+    with it. This class is used inly when returning characters
+    from string.
 
 	\sa string
 */
 
 /*!
-	\fn string::value_type::value_type()
 	\brief Default constructor.
 
 	Creates empty object that must be initialized
@@ -45,6 +43,9 @@ namespace core {
 
 	\sa operator=()
 */
+string::value_type::value_type() : m_val(0) {
+
+}
 
 /*!
 	\brief Copy constructor.
@@ -53,399 +54,422 @@ namespace core {
 
 	\sa value_type(), operator=(const value_type&)
 */
-string::value_type::value_type(const value_type& from) :
-		m_ptr(NULL), m_owner(from.m_owner), m_tempbuff(NULL) {
-	if(m_owner != NULL) {
-		m_ptr = from.m_ptr;
-	}
-	else if(!from.is_null()) {
-		allocator_type alloc;
-		size_type clen = from.bytes();
-		m_ptr = alloc.allocate(clen + 1);
-		alloc.copy(m_ptr, from.m_ptr, clen);
-		alloc.construct(m_ptr + clen, '\0');
-	}
+string::value_type::value_type(const value_type& from) : m_val(from.m_val) {
+
+}
+
+/*!
+    \brief Basic construction.
+
+    Constructs unicode character from character in 8-bit
+    encoding.
+
+    \param c ASCII encoded character.
+    \param enc Encoder which will be used to encode character to unicode.
+*/
+string::value_type::value_type(char c, const text_encoder& enc) :
+        m_val( enc.encode(&c, 1).at(0).utf32() ) {
+
+}
+
+/*!
+    \brief Basic construction.
+
+    Constructs unicode character from 32-bit number.
+
+    \param c Number (code) of unicode character.
+*/
+string::value_type::value_type(int c) : m_val(c) {
+
 }
 
 /*!
 	\brief Basic construction.
 
-	This constructor constructs "normal object" which holds
-	utf8 character. If \a c is not good encoded exception
-	wq::core::encode_error is thrown.
+	This constructor object that holds unicode character. Unicode
+	character is described in \a c buffer which is encoded in UTF-8.
 
-	\param c Pointer to first byte of utf8 encoded character sequence.
-	\param clen Length of character in bytes, if is \b -1 it is automatically determinate.
+	\param c Pointer to first byte of UTF-8 encoded character sequence.
 */
-string::value_type::value_type(const char* c, size_type clen) : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) {
-	if(c == NULL) {
-		return;
-	}
-	if(clen == -1) {
-		clen = strlen(c);
-	}
-	if(string::octets_count(c, clen) != 0) {
-		allocator_type alloc;
-		m_ptr = alloc.allocate(clen + 1);
-		alloc.copy(m_ptr, c, clen);
-		alloc.construct(m_ptr + clen, '\0');
-	}
-	else {
-		throw encode_error();
-	}
-}
+string::value_type::value_type(const char* c) : m_val( decode_utf8(c) ) {
 
-string::value_type::value_type(char c) : m_ptr(NULL), m_owner(NULL), m_tempbuff(NULL) {
-	allocator_type alloc;
-	m_ptr = alloc.allocate(2);
-	alloc.construct(m_ptr, c);
-	alloc.construct(m_ptr + 1, '\0');
 }
 
 /*!
-	\brief Construction with owner.
+    \brief Basic construction.
 
-	This constructor constructs "reference object". This object
-	refers to character in the string class. If \a c is not good
-	encoded exception wq::core::encode_error is thrown.
+    This constructor object that holds unicode character. Unicode
+    character is described in \a c buffer which is encoded in UTF-16.
 
-	\param c Pointer to starting byte of character which has to be
-	in string's range.
-	\param owner Pointer to string object which owns \a c.
+    \param c Pointer to first byte of UTF-16 encoded character sequence.
+    Sequence must end with number \b 0.
 */
-string::value_type::value_type(string* owner, char* c) : m_ptr(c), m_owner(owner), m_tempbuff(NULL) {
-	if(bytes() == 0) {
-		throw encode_error();
-	}
+string::value_type::value_type(wq::uint16 w1, wq::uint16 w2) : m_val( decode_utf16(w1, w2) ) {
+
 }
 
 /*!
-	\brief  Construction with constant owner.
+    \brief Assign operator.
 
-	Just like value_type(string*, char*) but with 'const_cast' used.
-
-	\sa value_type(string*, char*)
-*/
-string::value_type::value_type(const string* owner, char* c) :
-		m_ptr(c), m_owner(const_cast<string*>(owner)), m_tempbuff(NULL) {
-	if(bytes() == 0) {
-		throw encode_error();
-	}
-}
-
-/*!
-	\brief Destroy object.
-
-	Destructor suppose to destroy object. It has to
-	distinguish "reference object" and "normal object".
-	First one is object that refer to character in existing
-	wq::core::string class. An other one is object that just
-	hold utf8 character and can be used to change characters
-	in wq::core::string by '=' operator.
-*/
-string::value_type::~value_type() {
-	allocator_type alloc;
-	if(m_owner == NULL && m_ptr != NULL) {
-		alloc.deallocate(m_ptr);
-	}
-	if(m_tempbuff != NULL) {
-		alloc.deallocate(m_tempbuff);
-	}
-}
-
-/*!
-	\fn string::value_type::bytes() const
-	\brief Length of character.
-
-	Function returns number of bytes in character
-	handled by object.
-*/
-
-/*!
-	\brief Next character.
-
-	Function returns next character in string. If object
-	is not "reference object" or there is no any other
-	character default object is returned - is_null() returns true.
-*/
-string::value_type string::value_type::next() const {
-	if(owner() == NULL) {
-		return value_type();
-	}
-	if(m_ptr + bytes() < owner()->s()->m_last) {
-		return value_type(m_owner, m_ptr + bytes());
-	}
-	return value_type(m_owner, owner()->s()->m_last);
-}
-
-string::value_type string::value_type::prev() const {
-	if(owner() == NULL) {
-		return value_type();
-	}
-
-	// finding previous character is more complex :(
-	value_type ret = value_type(m_owner, m_ptr);
-	size_type clen = 0;
-	while(1) {
-		clen++;
-		ret.m_ptr--;
-		if(ret.bytes() != 0) {
-			break;
-		}
-	}
-	if(m_ptr - clen > owner()->s()->m_start) {
-		return value_type(m_owner, m_ptr - clen);
-	}
-	return value_type(m_owner, owner()->s()->m_start);
-}
-
-/*!
-	\brief Assign operator.
-
-	This operator copy \a r object to \a this object.
-
-	\sa operator= (const char*)
-*/
-string::value_type& string::value_type::operator= (const value_type& r) {
-	if(this != &r) {
-		if(m_owner == NULL) {
-            m_owner = r.m_owner;
-            if(m_owner == NULL) {
-                allocator_type alloc;
-                if(!is_null()) {
-                    alloc.deallocate(m_ptr);
-                    m_ptr = NULL;
-                }
-                size_type clen = r.bytes();
-                m_ptr = alloc.allocate(clen + 1);
-                alloc.copy(m_ptr, r.m_ptr, clen);
-                alloc.construct(m_ptr + clen, '\0');
-            }
-            else {
-                m_ptr = r.m_ptr;
-            }
-		}
-		else {
-			// replacing + assure m_ptr validity
-            difference_type dist = m_ptr - m_owner->s()->m_start;
-            m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + bytes(), r.m_ptr, r.bytes());
-            m_ptr = m_owner->s()->m_start + dist;
-		}
-	}
-	return *this;
-}
-
-/*!
-	\brief Assign operator.
-
-	This assign operator assign \a c character to \a this object.
-	If \a this object is of "reference type" string's character is also
-	changed.
-*/
-string::value_type& string::value_type::operator= (const char* c) {
-	if(m_owner == NULL) {
-		allocator_type alloc;
-		if(m_ptr != NULL) {
-			alloc.deallocate(m_ptr);
-		}
-		size_type clen = strlen(c);
-		if(string::octets_count(c, clen) != 0) {
-			m_ptr = alloc.allocate(clen + 1);
-			alloc.copy(m_ptr, c, clen);
-			alloc.construct(m_ptr + clen, '\0');
-		}
-		else {
-			throw encode_error();
-		}
-	}
-	else {
-		// replacing + assure m_ptr validity
-		difference_type dist = m_ptr - m_owner->s()->m_start;
-		m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + bytes(), c);
-		m_ptr = m_owner->s()->m_start + dist;
-	}
-	return *this;
-}
-
-/*!
-	\brief Assign operator.
-
-	Assign character \a c as content of object.
+    Assigns character \a c as content of object.
 */
 string::value_type& string::value_type::operator= (char c) {
-	if(m_owner == NULL) {
-		allocator_type alloc;
-		if(m_ptr != NULL) {
-			alloc.deallocate(m_ptr);
-		}
-		m_ptr = alloc.allocate(2);
-		alloc.construct(m_ptr, c);
-		alloc.construct(m_ptr + 1, '\0');
-	}
-	else {
-		// replacing + assure m_ptr validity
-		difference_type dist = m_ptr - m_owner->s()->m_start;
-		m_owner->s()->m_len += m_owner->lowl_replace(m_ptr, m_ptr + 1, &c, 1);
-		m_ptr = m_owner->s()->m_start + dist;
-	}
-	return *this;
+    m_val = wq::uint32(c);
+    return *this;
 }
 
-string::value_type& string::value_type::rebind(const value_type& n) {
-    if(owner() != NULL) {
-        m_owner = n.m_owner;
-        m_ptr = n.m_ptr;
-        return *this;
+/*!
+    \brief Assign operator.
+
+    Assigns character \a c as content of object.
+*/
+string::value_type& string::value_type::operator= (wq::uint32 c) {
+    m_val = c;
+    return *this;
+}
+
+/*!
+    \brief Assign operator.
+
+    This assigns operator assign \a c character to \a this object.
+    If \a this object is of "reference type" string's character is also
+    changed.
+*/
+string::value_type& string::value_type::operator= (const char* c) {
+    m_val = decode_utf8(c);
+    return *this;
+}
+
+/*!
+    \brief Assign operator.
+
+    This operator copy \a r object to \a this object.
+
+    \sa operator= (const char*)
+*/
+string::value_type& string::value_type::operator= (const value_type& r) {
+    if(this != &r) {
+        m_val = r.m_val;
     }
-    return (*this) = n;
+    return *this;
 }
 
 /*!
-	\brief Compare operator.
+    \brief Compare operator.
 
-	Compare character in \a this object with character
-	in \a r object.
+    Compare character in \a this object with character
+    in \a r object.
 
-	\return Returns \b true when characters are identical.
-*/
-bool string::value_type::operator== (const value_type& r) const {
-    if(m_ptr == r.m_ptr) {
-        return true;
-    }
-    else if(m_ptr == NULL || r.m_ptr == NULL) {
-         return false;
-    }
-	else if(this == &r) {
-		return true;
-	}
-	size_type this_size = bytes();
-	size_type r_size = r.bytes();
-	if(this_size != r_size) {
-		return false;
-	}
-
-	for(size_type i = 0; i != r_size; i++) {
-		if(m_ptr[i] != r.m_ptr[i]) {
-			return false;
-		}
-	}
-	return true;
-}
-
-/*!
-	\brief Compare operator.
-
-	Compare character in \this object with character describes
-	in \a r string.
-
-	\return Returns \b true when characters are identical.
-*/
-bool string::value_type::operator== (const char* r) const {
-	if(m_ptr == NULL || r == NULL) {
-		return false;
-	}
-	size_type this_size = bytes();
-	size_type r_size = strlen(r);
-	if(this_size != r_size) {
-		return false;
-	}
-
-	for(size_type i = 0; i != r_size; i++) {
-		if(m_ptr[i] != r[i]) {
-			return false;
-		}
-	}
-	return true;
-}
-
-/*!
-	\brief Compare operator.
-
-	Compare character in \this object with character \a c.
-
-	\return Returns \b true when characters are identical.
-*/
-bool string::value_type::operator== (char r) const {
-	if(bytes() == 1 && *m_ptr == r) {
-		return true;
-	}
-	return false;
-}
-
-/*!
-	\fn bool string::value_type::operator!= (const value_type&) const
-	\brief Compare operator.
-
-	Convince operator - opposite of operator==.
+    \return Returns \b true when characters are identical.
 */
 
 /*!
-	\fn bool string::value_type::operator!= (const char*) const
-	\brief Compare operator.
+    \brief Compare operator.
 
-	Convince operator - opposite of operator==.
+    Compare character in \this object with character describes
+    in \a r string.
+
+    \return Returns \b true when characters are identical.
 */
 
 /*!
-	\fn bool string::value_type::operator!= (char) const
-	\brief Compare operator.
+    \brief Compare operator.
 
-	Convince operator - opposite of operator==.
+    Compare character in \this object with character \a c.
+
+    \return Returns \b true when characters are identical.
 */
 
 /*!
-	\brief Converts to C string.
+    \fn bool string::value_type::operator!= (const value_type&) const
+    \brief Compare operator.
 
-	This function converts character to sequence
-	of char-s (bytes) and return a pointer to sequence.
+    Convince operator - opposite of operator==.
+*/
 
-	\sa operator const char*()
+/*!
+    \fn bool string::value_type::operator!= (const char*) const
+    \brief Compare operator.
+
+    Convince operator - opposite of operator==.
+*/
+
+/*!
+    \fn bool string::value_type::operator!= (char) const
+    \brief Compare operator.
+
+    Convince operator - opposite of operator==.
+*/
+
+/*!
+    \brief Converts to UTF-8 C string.
+
+    This function converts character to sequence
+    of char-s (bytes) and return a pointer to sequence.
+
+    \sa operator const char*()
 */
 const char* string::value_type::utf8() const {
-	if(m_owner != NULL) {
-		allocator_type alloc;
-		if(m_tempbuff != NULL) {
-			alloc.deallocate(m_tempbuff);
-		}
-		size_type clen = bytes();
-		m_tempbuff = alloc.allocate(clen + 1);
-		alloc.copy(m_tempbuff, m_ptr, clen);
-		alloc.construct(m_tempbuff + clen, '\0');
+    size_type oct_count = octets_count(m_val);
+    if(oct_count == 0) {
+        throw encode_error();
+    }
 
-		return m_tempbuff;
-	}
-	return m_ptr;
+    // encoding
+    /*
+       0000 0000-0000 007F | 0xxxxxxx
+       0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+       0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+       0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    */
+    if(oct_count == 1) {
+        m_utf8tmp[0] = m_val;
+    }
+    else if(oct_count == 2) {
+        m_utf8tmp[0] = (m_val >> 6) | 0xC0;
+        m_utf8tmp[1] = (m_val & 0x3F) | 0x80;
+    }
+    else if(oct_count == 3) {
+        m_utf8tmp[0] = (m_val >> 12) | 0xE0;
+        m_utf8tmp[1] = ((m_val >> 6) & 0x3F) | 0x80;
+        m_utf8tmp[2] = (m_val & 0x3F) | 0x80;
+    }
+    else if(oct_count == 4) {
+        m_utf8tmp[0] = (m_val >> 18) | 0xF0;
+        m_utf8tmp[1] = ((m_val >> 12) & 0x3F) | 0x80;
+        m_utf8tmp[2] = ((m_val >> 6) & 0x3F) | 0x80;
+        m_utf8tmp[3] = (m_val & 0x3F) | 0x80;
+    }
+
+    m_utf8tmp[oct_count] = '\0';
+    return m_utf8tmp;
+}
+
+
+/*!
+    \fn string::value_type::operator const char*() const
+    \brief Implicit conversion.
+
+    This operator allows implicit conversion to
+    UTF-8 encoded string.
+
+    \sa utf8()
+*/
+
+/*!
+    \brief Converts to UTF-16.
+
+    Returns character as representation of 1 or 2 16-bit unsigned
+    integers. Integers are returned in wq::pair object and can be accessed
+    by \a first and \a second members. Remember that \a second can be \b 0.
+
+    \sa utf8(), utf32()
+*/
+wq::pair<wq::uint16, wq::uint16> string::value_type::utf16() const {
+    wq::pair<wq::uint16, wq::uint16> ret_val(0, 0);
+    wq::uint32 u = utf32();
+    if(u < 0x10000) {
+        ret_val.first = wq::uint16(u);
+    }
+    else {
+        u = u - 0x10000;
+        ret_val.first = (u >> 10) | 0xD800;
+        ret_val.second = (u & 0x3FF) | 0xDC00;
+    }
+    return ret_val;
 }
 
 /*!
-	\brief Conversion to char.
+    \brief Conversion to ASCII char.
 
-	This functions convert character to
-	\a char type, however if character has more
-	than 1 byte character \b '?' is returned and no
-	exception is thrown. To handle all unicode characters
-	use utf8() function.
+    This functions convert character to ASCII
+    \a char type, however if character has more
+    than 1 byte character \b '?' is returned and no
+    exception is thrown. To handle all unicode characters
+    use utf8() function.
 
-	\sa utf8()
+    \sa utf8()
 */
-char string::value_type::ch() const {
-	if(bytes() == 1) {
-		return *m_ptr;
-	}
-	return '?';
+char string::value_type::ascii() const {
+    if(m_val <= 0x7F) {
+        return char(m_val);
+    }
+    return '?';
 }
 
-/*!
-	\fn string::value_type::operator char() const
-	\brief Implicit conversion.
+// private static functions
+string::size_type string::value_type::octets_count(char c) {
+    if( !(c & (1 << 7)) ) {
+        return 1;
+    }
+    else if( c & (1 << 7) && c & (1 << 6) && !(c & (1 << 5)) ) {
+        return 2;
+    }
+    else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && !(c & (1 << 4)) ) {
+        return 3;
+    }
+    else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && c & (1 << 4) && !(c & (1 << 4)) ) {
+        return 4;
+    }
+    return 0;
+}
 
-	This operator allows implicit conversion to
-	char type by calling ch() function.
+string::size_type string::value_type::octets_count(wq::uint32 c) {
+    if(c <= 0x7F) {
+        return 1;
+    }
+    else if(c <= 0x07FF) {
+        return 2;
+    }
+    else if(c <= 0xFFFF) {
+        return 3;
+    }
+    else if(c <= 0x10FFFF) {
+        return 4;
+    }
+    return 0;
+}
 
-	\sa ch()
-*/
+wq::uint32 string::value_type::decode_utf8(const char* seq) {
+    size_type oct_count = octets_count(*seq);
+    wq::uint32 ret_val = 0;
+    if(oct_count == 0) {
+        throw encode_error();
+    }
+
+    // decoding sequence
+    /*
+       0000 0000-0000 007F | 0xxxxxxx
+       0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+       0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+       0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    */
+    if(oct_count == 1) {
+        ret_val |= wq::uint32(*seq);
+    }
+    else if(oct_count == 2) {
+        ret_val |= wq::uint8(*(seq + 1)) ^ 0x80;
+        ret_val |= wq::uint32(wq::uint8(*seq) ^ 0xC0) << 6;
+    }
+    else if(oct_count == 3) {
+        ret_val |= wq::uint8(*(seq + 2)) ^ 0x80;
+        ret_val |= wq::uint32(wq::uint8(*(seq + 1)) ^ 0x80) << 6;
+        ret_val |= wq::uint32(wq::uint8(*seq) ^ 0xE0) << 12;
+    }
+    else if(oct_count == 4) {
+        ret_val |= wq::uint8(*(seq + 3)) ^ 0x80;
+        ret_val |= wq::uint32(wq::uint8(*(seq + 2)) ^ 0x80) << 6;
+        ret_val |= wq::uint32(wq::uint8(*(seq + 1)) ^ 0x80) << 12;
+        ret_val |= wq::uint32(wq::uint8(*seq) ^ 0xF0) << 18;
+    }
+
+    return ret_val;
+}
+
+wq::uint32 string::value_type::decode_utf16(wq::uint16 w1, wq::uint16 w2) {
+    if(w1 > 0xDFFF && w1 < 0xD800) {
+        return wq::uint32(w1);
+    }
+    else if(!(w1 >= 0xD800 && w1 <= 0xDBFF)) {
+        throw encode_error();
+    }
+    else if(w2 == 0 || !(w2 >= 0xDC00 && w2 <= 0xDFFF)) {
+        throw encode_error();
+    }
+    return (((w1 ^ 0xD800) << 10) | (w2 ^ 0xDC00) + 0x10000);
+}
+
+// string::reference class
+string::reference::reference(string* owner, char* ptr) :
+        value_type(), m_owner(owner), m_ptr(ptr) {
+    if(m_ptr == m_owner->cs()->m_last) {
+        value_type::operator= ( wq::uint32(0) );
+    }
+    else {
+        value_type::operator= (m_ptr);
+    }
+}
+
+string::reference::reference(const string* owner, char* ptr) :
+        value_type(), m_owner(const_cast<string*>(owner)), m_ptr(ptr) {
+    if(m_ptr == m_owner->cs()->m_last) {
+        value_type::operator= ( wq::uint32(0) );
+    }
+    else {
+        value_type::operator= (m_ptr);
+    }
+}
+
+string::reference::reference(const reference& from) :
+        value_type(from), m_owner(from.m_owner), m_ptr(from.m_ptr) {
+
+}
+
+// assignment
+string::reference& string::reference::operator= (const reference& r) {
+    if(&r != this) {
+        value_type::operator= (r);
+        owner()->replace( iterator( reference(owner(), ptr()) ), iterator( reference(owner(), ptr() + bytes()) ),
+                          r.ptr(), r.bytes());
+    }
+    return *this;
+}
+
+string::reference& string::reference::operator= (const_reference r) {
+    if(&r != this) {
+        value_type::operator= (r);
+        owner()->replace( iterator( reference(owner(), ptr()) ), iterator( reference(owner(), ptr() + bytes()) ),
+                          r.utf8(), r.bytes());
+    }
+    return *this;
+}
+
+// private functions
+// new contents without changing string's data
+void string::reference::rebind(const reference& n) {
+    value_type::operator= (n);
+    m_owner = n.m_owner;
+    m_ptr = n.m_ptr;
+}
+
+// returns next character in string
+string::reference string::reference::next() const {
+    if(m_ptr + bytes() < owner()->s()->m_last) {
+        return reference(m_owner, m_ptr + bytes());
+    }
+    return reference(m_owner, owner()->s()->m_last);
+}
+
+// returns previous character in string
+string::reference string::reference::prev() const {
+    // finding previous character is more complex :(
+    reference ret = reference(m_owner, m_ptr);
+    size_type clen = 0;
+    while(1) {
+        clen++;
+        ret.m_ptr--;
+        if(ret.bytes() != 0) {
+            break;
+        }
+    }
+    if(m_ptr - clen > owner()->s()->m_start) {
+        return reference(m_owner, m_ptr - clen);
+    }
+    return reference(m_owner, owner()->s()->m_start);
+}
 
 // string::iterator class
+string::difference_type string::iterator::operator- (const const_iterator& r) const {
+    const_iterator tmp = r;
+    difference_type ret = 0;
+    int add = tmp < *this ? 1 : -1;
+    while(tmp != *this) {
+        tmp += add;
+        ret += add;
+    }
+    return ret;
+}
+
 string::iterator string::iterator::operator+ (size_type n) const {
 	iterator ret = *this;
 	for( ; n != 0; n--) {
@@ -471,6 +495,17 @@ string::iterator string::iterator::operator- (size_type n) const {
 }
 
 // string::const_iterator class
+string::difference_type string::const_iterator::operator- (const const_iterator& r) const {
+    const_iterator tmp = r;
+    difference_type ret = 0;
+    int add = tmp < *this ? 1 : -1;
+    while(tmp != *this) {
+        tmp += add;
+        ret += add;
+    }
+    return ret;
+}
+
 string::const_iterator string::const_iterator::operator+ (size_type n) const {
 	const_iterator ret = *this;
 	for( ; n != 0; n--) {
@@ -496,6 +531,8 @@ string::const_iterator string::const_iterator::operator- (size_type n) const {
 }
 
 // string::shared_data class
+string::allocator_type string::shared_data::m_alloc;
+
 string::shared_data::shared_data(const shared_data& from) :
 		m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) {
 	size_type size = from.m_last - from.m_start;
@@ -515,9 +552,8 @@ string::shared_data::~shared_data() {
 	}
 }
 
-
 // string class
-static const string::size_type npos = -1;
+const string::size_type string::npos = -1;
 
 /*!
 	\brief Constructs string.
@@ -533,8 +569,9 @@ string::string() : m_tempbuff(NULL), s_ptr(new shared_data) {
 
 	Constructor constructs string with the given context.
 */
-string::string(const char* str, size_type size) : m_tempbuff(NULL), s_ptr(new shared_data) {
-	assign(str, size);
+string::string(const char* str, size_type size, const text_encoder& enc) :
+        m_tempbuff(NULL), s_ptr(new shared_data) {
+	assign( enc.encode(str, size) );
 }
 
 /*!
@@ -550,6 +587,10 @@ string::string(const string& other) : m_tempbuff(NULL), s_ptr(other.s_ptr) {
 
 string::string(size_type n, const_reference c) : m_tempbuff(NULL), s_ptr(new shared_data) {
     assign(n, c);
+}
+
+string::string(const_iterator first, const_iterator last)  : m_tempbuff(NULL), s_ptr(new shared_data) {
+    assign(first, last);
 }
 
 /*!
@@ -587,7 +628,19 @@ void string::clear() {
 }
 
 void string::reserve(size_type least_size) {
-    lowl_realloc(least_size);
+    // resize only if it is needed
+    size_type old_capacity = s()->m_end - s()->m_start;
+    size_type old_size = s()->m_last - s()->m_start;
+    if(old_capacity < old_size + least_size) {
+        // finding new capacity - always by multiplying with 2
+        size_type least_capacity = old_size + least_size;
+        size_type new_capacity = old_capacity == 0 ? 1 : old_capacity;
+        while(new_capacity < least_capacity) new_capacity = new_capacity * 2;
+
+        s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, new_capacity);
+        s()->m_end = s()->m_start + new_capacity;
+        s()->m_last = s()->m_start + old_size;
+    }
 }
 
 void string::resize(size_type new_size, const_reference new_c) {
@@ -631,191 +684,210 @@ string::const_reference string::at(size_type i) const {
 	return *(begin() + i);
 }
 
-string& string::assign(const string& str) {
-	s()->m_len = lowl_assign(str.s()->m_start, str.bytes());
-	return *this;
-}
-
 string& string::assign(const string& str, size_type from, size_type size) {
-    const_iterator start = str.begin() + from;
-    const char* start_at = str.s()->m_start + start->ptr_index();
-    size = (size > str.size() - from) ? str.size() - from : size;
-    size = (start + size)->ptr() - start->ptr();
-	s()->m_len = lowl_assign(start_at, size);
-	return *this;
-}
+    if(size == npos) {
+        size = str.size();
+    }
+    size = (size > str.size() - from) ? (str.size() - from) : size;
 
-string& string::assign(const char* str, size_type size) {
-	s()->m_len = lowl_assign(str, size);
+    // when we are assigning full object we can simply assign
+    // shared data only
+    if(from == 0 && size == str.size()) {
+        s_ptr.set_data(str.s_ptr);
+    }
+    else {
+        clear();
+        append(str, from, size);
+    }
 	return *this;
 }
 
 string& string::assign(size_type n, const_reference c) {
 	clear();
-	lowl_realloc(n);
-	for(; n != 0; n--) {
-		s()->m_len += lowl_append(c.ptr(), c.bytes());
-	}
-	return *this;
+	return append(n, c);
 }
 
-string& string::append(const string& str) {
-    s()->m_len += lowl_append(str.s()->m_start, str.bytes());
+string& string::assign(const_iterator first, const_iterator last) {
+    if(first.m_val.is_first() && last.m_val.is_last()) {
+        // we can simply assign shared data
+        s_ptr.set_data( first.m_val.owner()->s_ptr );
+    }
+    else {
+        // we will append new data
+        append(first, last);
+    }
     return *this;
 }
 
 string& string::append(const string& str, size_type from, size_type size) {
-    const_iterator start = str.begin() + from;
-    const char* start_at = str.s()->m_start + start->ptr_index();
-    size = (size > str.size() - from) ? str.size() - from : size;
-    size = (start + size)->ptr() - start->ptr();
-    s()->m_len += lowl_append(start_at, size);
-    return *this;
-}
+    if(size == npos) {
+        size = str.size();
+    }
+    size = (size > str.size() - from) ? (str.size() - from) : size;
 
-string& string::append(const char* str, size_type size) {
-    s()->m_len += lowl_append(str, size);
+    if(size > 0) {
+        const_iterator first = str.begin() + from;
+        const_iterator last = first + (size - from);
+        size_type bytes_size = last.ptr() - first.ptr();
+        reserve(bytes_size);
+        s()->m_last = s()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
+        s()->m_len += size;
+    }
     return *this;
 }
 
 string& string::append(size_type n, const_reference c) {
-    lowl_realloc(n);
+    size_type c_bytes = c.bytes();
+    const char* c_buff = c.utf8();
+    reserve(n * c_bytes);
     for(; n != 0; n--) {
-        s()->m_len += lowl_append(c.ptr(), c.bytes());
+        s()->m_last = s()->m_alloc.copy(end().ptr(), c_buff, c_bytes);
+        s()->m_len++;
     }
     return *this;
 }
 
-string& string::insert(size_type i, const string& str) {
-    s()->m_len += lowl_insert(at(i).ptr(), str.s()->m_start, str.bytes());
+string& string::append(const_iterator first, const_iterator last) {
+    size_type bytes_size = last.ptr() - first.ptr();
+    if(bytes_size > 0) {
+        reserve(bytes_size);
+        s()->m_last = s()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
+        s()->m_len += last - first;
+    }
     return *this;
 }
 
 string& string::insert(size_type i, const string& str, size_type from, size_type size) {
-    const_iterator start = str.begin() + from;
-    const char* start_at = str.s()->m_start + start->ptr_index();
-    size = (size > str.size() - from) ? str.size() - from : size;
-    size = (start + size)->ptr() - start->ptr();
-    s()->m_len += lowl_insert(at(i).ptr(), start_at, size);
+    if(size == npos) {
+        size = str.size();
+    }
+    size = (size > str.size() - from) ? (str.size() - from) : size;
+
+    if(size > 0) {
+        const_iterator copy_from = str.begin() + from;
+        const_iterator copy_to = copy_from + (size - from);
+        size_type insert_size = copy_to.ptr() - copy_from.ptr();
+
+        reserve(insert_size);
+        iterator cut_at = begin() + i;
+        s()->m_last = s()->m_alloc.ocopy(cut_at.ptr() + insert_size, cut_at.ptr(), end().ptr() - cut_at.ptr());
+        s()->m_alloc.copy(cut_at.ptr(), copy_from.ptr(), insert_size);
+        s()->m_len += size;
+    }
     return *this;
 }
 
-string& string::insert(size_type i, const char* str, size_type size) {
-    s()->m_len += lowl_insert(at(i).ptr(), str, size);
-    return *this;
+string::iterator string::insert(iterator iter, const string& str, size_type from, size_type size) {
+    size_type dist = iter - begin();
+    insert(dist, str, from, size);
+    return begin() + dist;
 }
 
-string& string::insert(size_type i, const_reference c) {
-    s()->m_len += lowl_insert(at(i).ptr(), c, c.bytes());
-    return *this;
-}
-
-string& string::insert(size_type i, size_type n, const_reference c) {
-    // we will use temporary buffer for this inserting, this avoid
-    // repeated moving of memory
-    string ins_str(n, c);
-    s()->m_len += lowl_insert(at(i).ptr(), ins_str.s()->m_start, ins_str.bytes());
-    return *this;
-}
-
-string::iterator string::insert(iterator iter, const string& str) {
-    s()->m_len += lowl_insert(iter->ptr(), str.s()->m_start, str.bytes());
-    return iter;
-}
-
-string::iterator string::insert(iterator iter, const char* str, size_type size) {
-    s()->m_len += lowl_insert(iter->ptr(), str, size);
-    return iter;
-}
-
-string::iterator string::insert(iterator iter, const_reference c) {
-    s()->m_len += lowl_insert(iter->ptr(), c, c.bytes());
-    return iter;
+string::iterator string::insert(iterator iter, const char* str, size_type size, const text_encoder& enc) {
+    size_type dist = iter - begin();
+    insert(dist, str, size, enc);
+    return begin() + dist;
 }
 
 string::iterator string::insert(iterator iter, size_type n, const_reference c) {
-    // we will use temporary buffer for this inserting, this avoid
-    // repeated moving of memory
-    string ins_str(n, c);
-    s()->m_len += lowl_insert(iter->ptr(), ins_str.cs()->m_start, ins_str.bytes());
-    return iter;
+    size_type dist = iter - begin();
+    insert(dist, n, c);
+    return begin() + dist;
 }
 
 string& string::erase(size_type from, size_type n) {
-    if(n == -1) {
+    if(n == npos) {
         n = size() - from;
     }
-    iterator start = begin() + from;
-    iterator end = start + n;
-    s()->m_len -= lowl_erase(start->ptr(), end->ptr());
+    if(n > 0) {
+        iterator first = begin() + from;
+        iterator last = first + n;
+        s()->m_last = s()->m_alloc.ocopy(first.ptr(), last.ptr(), end().ptr() - last.ptr());
+        s()->m_len -= n;
+    }
     return *this;
 }
 
 string::iterator string::erase(iterator iter) {
-    s()->m_len -= lowl_erase(iter->ptr(), (iter + 1)->ptr());
-    return iter->ptr() >= cs()->m_last ? end() : iter;
+    size_type dist = iter - begin();
+    erase(dist, 1);
+    try {
+        iter = begin() + dist;
+    }
+    catch(const range_error&) {
+        iter = end();
+    }
+    return iter;
 }
 
 string::iterator string::erase(iterator start_iter, iterator end_iter) {
-    s()->m_len -= lowl_erase(start_iter->ptr(), end_iter->ptr());
-    return start_iter->ptr() >= cs()->m_last ? end() : start_iter;
-}
-
-string& string::replace(size_type from, size_type n, const string& with) {
-    iterator start = begin() + from;
-    iterator end = start + n;
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), with.cs()->m_start, with.bytes());
-    return *this;
+    size_type dist1 = start_iter - begin();
+    size_type dist2 = end_iter - begin();
+    erase(dist1, dist2 - dist1);
+    try {
+        start_iter = begin() + dist1;
+    }
+    catch(const range_error&) {
+        start_iter = end();
+    }
+    return start_iter;
 }
 
 string& string::replace(size_type from, size_type n, const string& with, size_type from2, size_type n2) {
-    iterator start = begin() + from;
-    iterator end = start + n;
-    const_iterator start2 = with.begin() + from2;
-    const_iterator end2 = start2 + n2;
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), start2->ptr(), (end2->ptr() - start2->ptr()));
-    return *this;
-}
+    s_ptr.unshare_data();
+    if(n2 == npos) {
+        n2 = with.size();
+    }
+    n2 = (n2 > with.size() - from2) ? (with.size() - from2) : n2;
+    if(n == npos) {
+        n = size();
+    }
+    n = (n > with.size() - from) ? (with.size() - from) : n;
 
-string& string::replace(size_type from, size_type n, const char* str, size_type size) {
-    iterator start = begin() + from;
-    iterator end = start + n;
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), str, size);
-    return *this;
-}
+    // now we will initialize all iterators that we will need
+    iterator erase_from = begin() + from;
+    iterator erase_to = erase_from + n;
+    const_iterator insert_from = with.begin() + from2;
+    const_iterator insert_to = insert_from + n2;
 
-string& string::replace(size_type from, size_type n, size_type count, const_reference c) {
-    // we will use temporary buffer for this inserting, this avoid
-    // repeated moving of memory
-    string rep_str(count, c);
+    // some sizes
+    size_type erase_bytes = erase_to.ptr() - erase_from.ptr();
+    size_type insert_bytes = insert_to.ptr() - insert_from.ptr();
 
-    iterator start = begin() + from;
-    iterator end = start + n;
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), rep_str.cs()->m_start, rep_str.bytes());
-    return *this;
-}
+    // things will be more complex because I want replacing as fast as possible
+    if(erase_bytes == insert_bytes) {
+        // just put it there
+        s()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), insert_bytes);
+    }
+    else if(erase_bytes < insert_bytes) {
+        // next step will make our erase iterators invalid (in some cases only)
+        reserve(insert_bytes - erase_bytes);
 
-string& string::replace(iterator start, iterator end, const string& with) {
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), with.cs()->m_start, with.bytes());
-    return *this;
-}
+        // so we have to count them again
+        erase_from = begin() + from;
+        erase_to = erase_from + n;
 
-string& string::replace(iterator start, iterator end, const_iterator start2, const_iterator end2) {
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), start2->ptr(), end2->ptr() - start2->ptr());
-    return *this;
-}
+        // copy as many bytes as possible => erase_bytes bytes
+        s()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), erase_bytes);
 
-string& string::replace(iterator start, iterator end, const char* str, size_type size) {
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), str, size);
-    return *this;
-}
+        // make space for other bytes
+        s()->m_last = s()->m_alloc.ocopy(erase_to.ptr() + (insert_bytes - erase_bytes),
+                                         erase_to.ptr(), end().ptr() - erase_to.ptr());
 
-string& string::replace(iterator start, iterator end, size_type count, const_reference c) {
-    // we will use temporary buffer for this inserting, this avoid
-    // repeated moving of memory
-    string rep_str(count, c);
+        // and put other bytes to right place
+        s()->m_alloc.copy(erase_to.ptr(), insert_from.ptr() + erase_bytes, insert_bytes - erase_bytes);
+    }
+    else if(erase_bytes > insert_bytes) {
+        // copy all bytes to right place
+        s()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), insert_bytes);
 
-    s()->m_len += lowl_replace(start->ptr(), end->ptr(), rep_str.cs()->m_start, rep_str.bytes());
+        // and now copy data to left
+        s()->m_last = s()->m_alloc.ocopy(erase_from.ptr() + insert_bytes, erase_to.ptr(),
+                                         end().ptr() - erase_to.ptr());
+    }
+
+    // adding size
+    s()->m_len += n2 - n;
     return *this;
 }
 
@@ -838,7 +910,7 @@ string::size_type string::copy(char* out_str, size_type n, size_type from) const
         // for every character we have to copy all bytes
         size_type stop_after = start->bytes();
         for(size_type i = 0; i != stop_after; i++) {
-            out_str[copied + i] = *(start->ptr() + i);
+            out_str[copied + i] = *(start.ptr() + i);
         }
         copied += stop_after;
     }
@@ -903,166 +975,6 @@ const char* string::utf8_str() const {
 
 	\sa utf8_str()
 */
-
-// private functions
-// function will return number of octets of utf8 character 'c'
-string::size_type string::octets_count(const char* arr, size_type size) {
-	/*
-	   octets specifications:
-	   0000 0000-0000 007F | 0xxxxxxx
-	   0000 0080-0000 07FF | 110xxxxx 10xxxxxx
-	   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
-	   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-	*/
-	char c = *arr;
-	char c2 = size > 1 ? arr[1] : '\0';
-	if(c2 != '\0') {
-		if( !(c & (1 << 7)) ) {
-			return 1;
-		}
-		else if( c & (1 << 7) && c & (1 << 6) && !(c & (1 << 5)) ) {
-			return 2;
-		}
-		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && !(c & (1 << 4)) ) {
-			return 3;
-		}
-		else if( c & (1 << 7) && c & (1 << 6) && c & (1 << 5) && c & (1 << 4) && !(c & (1 << 4)) ) {
-			return 4;
-		}
-		return 0;
-	}
-	return 1;
-}
-
-// function will return number of chars of 'str'
-string::size_type string::chars_count(const char* str, size_type size) {
-	if(size == -1) {
-		size = strlen(str);
-	}
-	size_type ret_val = 0;
-	size_type i = 0;
-	while(i < size) {
-		ret_val++;
-		size_type to_add = octets_count(str + i, size - i);
-		if(to_add == 0) {
-		    throw encode_error();
-		}
-		i += to_add;
-	}
-	return ret_val;
-}
-
-// this function realloc string by realloc algorithm + ensure 'size' bytes are free
-void string::lowl_realloc(size_type size) {
-	// resize only if it is needed
-	size_type old_capacity = s()->m_end - s()->m_start;
-	size_type old_size = s()->m_last - s()->m_start;
-	if(old_capacity < old_size + size) {
-	    // finding new capacity - always by multiplying with 2
-	    size_type least_capacity = old_size + size;
-	    size_type new_capacity = old_capacity == 0 ? 1 : old_capacity;
-	    while(new_capacity < least_capacity) new_capacity = new_capacity * 2;
-
-		s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, new_capacity);
-		s()->m_end = s()->m_start + new_capacity;
-		s()->m_last = s()->m_start + old_size;
-	}
-}
-
-// this function appends new utf8 chars to string
-string::size_type string::lowl_append(const char* str, size_type str_size) {
-    const char null_arr[] = "\0";
-    if(str == NULL) {
-        str_size = 1;
-        str = null_arr;
-    }
-    else if(str_size == -1) {
-        str_size = strlen(str);
-    }
-
-    lowl_realloc(str_size);
-    s()->m_last = s()->m_alloc.copy(s()->m_last, str, str_size);
-
-    // returning length of inserted string
-    return chars_count(str, str_size);
-}
-
-// this function delete string contents and assign the new one
-string::size_type string::lowl_assign(const char* str, size_type str_size) {
-    s()->m_last = s()->m_start;
-	return lowl_append(str, str_size);
-}
-
-// this function inserts 'str' at 'at' position (moving all chars after 'at' (including 'at') to right)
-string::size_type string::lowl_insert(char* at, const char* str, size_type str_size) {
-    const char null_arr[] = "\0";
-    if(str == NULL) {
-        str_size = 1;
-        str = null_arr;
-    }
-    else if(str_size == -1) {
-        str_size = strlen(str);
-    }
-
-    // appending 'str_size' zero characters + assure validity of 'at'
-    difference_type dist = at - s()->m_start;
-    lowl_realloc(str_size);
-    at = s()->m_start + dist;
-
-    // copying data to right
-    s()->m_last = s()->m_alloc.ocopy(at + str_size, at, s()->m_last - at);
-
-    // copying new data to right place
-    s()->m_alloc.copy(at, str, str_size);
-
-    // returning length
-    return chars_count(str, str_size);
-}
-
-// delete characters between two pointers that points to bytes in string
-string::size_type string::lowl_erase(char* first, char* last) {
-	if(first == NULL || last == NULL) {
-		return 0;
-	}
-	// how many characters will we erase?
-	size_type erased = chars_count(first, last - first);
-
-	// rewriting deleted data
-	s()->m_last = s()->m_alloc.ocopy(first, last, s()->m_last - last);
-
-	// erased length
-	return erased;
-}
-
-// replace bytes between 'first' and 'last' with str
-string::size_type string::lowl_replace(char* first, char* last, const char* str, size_type str_size) {
-	const char null_arr[] = "\0";
-    if(str == NULL) {
-	    str_size = 1;
-	    str = null_arr;
-	}
-	else if(str_size == -1) {
-		str_size = strlen(str);
-	}
-	size_type rep_size = last - first;
-
-	// first length that will be erased
-	size_type ret = chars_count(str, str_size) - chars_count(first, last - first);
-
-	// the most obvious way to do that - I am lazy to make it shorter :)
-	if(rep_size == str_size) {
-		s()->m_alloc.copy(first, str, rep_size);
-	}
-	else if(rep_size < str_size) {
-		s()->m_alloc.copy(first, str, rep_size);
-		lowl_insert(first + rep_size, str + rep_size, str_size - rep_size);
-	}
-	else if(rep_size > str_size) {
-		first = s()->m_alloc.copy(first, str, str_size);
-		lowl_erase(first, first + (rep_size - str_size));
-	}
-	return ret;
-}
 
 }  // namespace core
 }  // namespace wq

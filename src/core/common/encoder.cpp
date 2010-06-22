@@ -67,7 +67,10 @@ char* utf8_encoder::decode(const string& str, wq::size_t* out_size) const {
     if(out_size != NULL) {
         *out_size = str.bytes();
     }
-    return const_cast<char*>( str.utf8_str() );
+    string::allocator_type alloc = str.get_allocator();
+    char* ret = alloc.allocate(str.bytes() + 1);
+    alloc.construct( alloc.copy(ret, str.data(), str.bytes()), '\0' );
+    return ret;
 }
 
 

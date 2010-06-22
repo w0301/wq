@@ -21,6 +21,7 @@
 
 #include "wq/defs.h"
 #include "wq/core/atomic.h"
+#include "wq/core/type_info.h"
 
 namespace wq {
 namespace core {
@@ -167,8 +168,10 @@ template<class T> void shared_ptr<T>::unshare_data() {
         typedef shared_data base_shared_data;		\
 		WQ_SHARED_DATA();
 
-
 }  // namespace core
 }  // namespace wq
+
+// defining as movable
+WQ_MOVABLE_TEMPLATE_TYPE_1(shared_ptr);
 
 #endif  // WQ_SHARED_PTR_H

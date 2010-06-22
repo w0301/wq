@@ -51,10 +51,10 @@ class WQ_EXPORT string {
 				// basic construction
 				value_type();
 				value_type(int val);
-				value_type(char, const text_encoder& = utf8_encoder());
 				value_type(wq::uint32 val) : m_val(val) { };
-				value_type(const char*);
-				value_type(wq::uint16, wq::uint16);
+				value_type(char, const text_encoder& = utf8_encoder());
+				value_type(const char*, bool = true);
+				value_type(wq::uint16, wq::uint16, bool = true);
 
 				// coping
 				value_type(const value_type&);
@@ -66,16 +66,25 @@ class WQ_EXPORT string {
 				};
 
                 // assignment
-				value_type& operator= (char);
-				value_type& operator= (wq::uint32);
-				value_type& operator= (const char*);
+				value_type& operator= (const char* c) {
+				    return operator= ( value_type(c) );
+				}
+				value_type& operator= (wq::uint32 val) {
+				    return operator= ( value_type(val) );
+				};
+				value_type& operator= (char c) {
+				    return operator= ( value_type(c, utf8_encoder()) );
+				};
 
                 // comparing
 				bool operator== (char r) const {
 				    return m_val <= 0xFF && m_val == wq::uint32(r);
 				};
+                bool operator== (wq::uint32 r) const {
+                    return m_val == r;
+                };
 				bool operator== (const char* r) const {
-				    return m_val == decode_utf8(r);
+				    return m_val == decode_utf8(r, true);
 				};
 				bool operator== (const value_type& r) const {
                     return m_val == r.m_val;
@@ -83,6 +92,9 @@ class WQ_EXPORT string {
 
 				// reverse comparing
                 bool operator!= (char r) const {
+                    return !(*this == r);
+                };
+                bool operator!= (wq::uint32 r) const {
                     return !(*this == r);
                 };
                 bool operator!= (const char* r) const {
@@ -116,8 +128,8 @@ class WQ_EXPORT string {
                 // decoding functions
                 static size_type octets_count(char);
                 static size_type octets_count(wq::uint32);
-                static wq::uint32 decode_utf8(const char*);
-                static wq::uint32 decode_utf16(wq::uint16, wq::uint16);
+                static wq::uint32 decode_utf8(const char*, bool);
+                static wq::uint32 decode_utf16(wq::uint16, wq::uint16, bool);
 
                 // this holds number of unicode character
                 wq::uint32 m_val;
@@ -575,9 +587,19 @@ class WQ_EXPORT string {
 		};
 
 		// converting
-		const char* utf8_str() const;
-		const char* c_str() const {
-			return utf8_str();
+		const char* utf8_str(bool err = true) const {
+		    return set_tempbuff( utf8_encoder(err).decode(*this) );
+		};
+		const char* c_str(bool err = true) const {
+			return utf8_str(err);
+		};
+
+		// getters
+		const char* data() const {
+		    return s()->m_start;
+		};
+		allocator_type get_allocator() const {
+		    return s()->m_alloc;
 		};
 
 	private:
@@ -597,6 +619,13 @@ class WQ_EXPORT string {
 		// temp buffer for *_str functions
 		mutable char* m_tempbuff;
 
+		char* set_tempbuff(char* buff) const {
+		    if(m_tempbuff != NULL) {
+		        s()->m_alloc.deallocate(m_tempbuff);
+		    }
+		    return (m_tempbuff = buff);
+		};
+
 	public:
 		//! Constant that indicates greatest possible or automatic size.
 		static const size_type npos;
@@ -609,5 +638,11 @@ class WQ_EXPORT string {
 }  // namespace core
 }  // namespace wq
 
+// defing movable types
+WQ_MOVABLE_TYPE(string);
+WQ_MOVABLE_TYPE(string::value_type);
+WQ_MOVABLE_TYPE(string::reference);
+WQ_MOVABLE_TYPE(string::iterator);
+WQ_MOVABLE_TYPE(string::const_iterator);
 
 #endif  // WQ_STRING_H

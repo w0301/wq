@@ -121,7 +121,7 @@ template<class T> class allocator {
 
 template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_size, size_type new_size) {
 	pointer retval = NULL;
-	if(type_info<value_type>::is_moveable()) {
+	if(type_info<value_type>::is_movable()) {
 		// if type is moveable we can use realloc function
 		retval = static_cast<pointer>( ::realloc(static_cast<void*>(old_ptr),
 									   type_info<value_type>::size() * new_size) );
@@ -141,7 +141,7 @@ template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_siz
 }
 
 template<class T> T* allocator<T>::copy(pointer dest, const_pointer mem, size_type n) {
-	if(type_info<value_type>::is_moveable()) {
+	if(type_info<value_type>::is_movable()) {
 		// this is not overlap safe copying
 		memcpy(static_cast<void*>(dest), static_cast<const void*>(mem), type_info<value_type>::size() * n);
 	}
@@ -157,7 +157,7 @@ template<class T> T* allocator<T>::copy(pointer dest, const_pointer mem, size_ty
 }
 
 template<class T> T* allocator<T>::ocopy(pointer dest, const_pointer mem, size_type n) {
-	if(type_info<value_type>::is_moveable()) {
+	if(type_info<value_type>::is_movable()) {
 		// overlap safe copying
 		memmove(static_cast<void*>(dest), static_cast<const void*>(mem), n);
 	}

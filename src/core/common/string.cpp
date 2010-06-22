@@ -90,8 +90,11 @@ string::value_type::value_type(int c) : m_val(c) {
 	character is described in \a c buffer which is encoded in UTF-8.
 
 	\param c Pointer to first byte of UTF-8 encoded character sequence.
+	\param throw_err If \b true all encode errors of \a c are reported by throwing
+	encode_error exception, otherwise those errors are not reported but character
+	will be equal to repl_char() after error.
 */
-string::value_type::value_type(const char* c) : m_val( decode_utf8(c) ) {
+string::value_type::value_type(const char* c, bool throw_err) : m_val( decode_utf8(c, throw_err) ) {
 
 }
 
@@ -103,42 +106,37 @@ string::value_type::value_type(const char* c) : m_val( decode_utf8(c) ) {
 
     \param c Pointer to first byte of UTF-16 encoded character sequence.
     Sequence must end with number \b 0.
+    \param throw_err If \b true all encode errors of \a c are reported by throwing
+    encode_error exception, otherwise those errors are not reported but character
+    will be equal to repl_char() after error.
 */
-string::value_type::value_type(wq::uint16 w1, wq::uint16 w2) : m_val( decode_utf16(w1, w2) ) {
+string::value_type::value_type(wq::uint16 w1, wq::uint16 w2, bool throw_err) :
+        m_val( decode_utf16(w1, w2, throw_err) ) {
 
 }
 
 /*!
+    \fn string::value_type::operator= (char)
     \brief Assign operator.
 
     Assigns character \a c as content of object.
 */
-string::value_type& string::value_type::operator= (char c) {
-    m_val = wq::uint32(c);
-    return *this;
-}
 
 /*!
+    \fn string::value_type::operator= (wq::uint32)
     \brief Assign operator.
 
     Assigns character \a c as content of object.
 */
-string::value_type& string::value_type::operator= (wq::uint32 c) {
-    m_val = c;
-    return *this;
-}
 
 /*!
+    \fn string::value_type::operator= (const char*)
     \brief Assign operator.
 
     This assigns operator assign \a c character to \a this object.
     If \a this object is of "reference type" string's character is also
     changed.
 */
-string::value_type& string::value_type::operator= (const char* c) {
-    m_val = decode_utf8(c);
-    return *this;
-}
 
 /*!
     \brief Assign operator.
@@ -330,11 +328,16 @@ string::size_type string::value_type::octets_count(wq::uint32 c) {
     return 0;
 }
 
-wq::uint32 string::value_type::decode_utf8(const char* seq) {
+wq::uint32 string::value_type::decode_utf8(const char* seq, bool threrr) {
     size_type oct_count = octets_count(*seq);
     wq::uint32 ret_val = 0;
     if(oct_count == 0) {
-        throw encode_error();
+        if(threrr) {
+            throw encode_error();
+        }
+        else {
+            return repl_char().utf32();
+        }
     }
 
     // decoding sequence
@@ -366,15 +369,25 @@ wq::uint32 string::value_type::decode_utf8(const char* seq) {
     return ret_val;
 }
 
-wq::uint32 string::value_type::decode_utf16(wq::uint16 w1, wq::uint16 w2) {
+wq::uint32 string::value_type::decode_utf16(wq::uint16 w1, wq::uint16 w2, bool threrr) {
     if(w1 > 0xDFFF && w1 < 0xD800) {
         return wq::uint32(w1);
     }
     else if(!(w1 >= 0xD800 && w1 <= 0xDBFF)) {
-        throw encode_error();
+        if(threrr) {
+            throw encode_error();
+        }
+        else {
+            return repl_char().utf32();
+        }
     }
     else if(w2 == 0 || !(w2 >= 0xDC00 && w2 <= 0xDFFF)) {
-        throw encode_error();
+        if(threrr) {
+            throw encode_error();
+        }
+        else {
+            return repl_char().utf32();
+        }
     }
     return (((w1 ^ 0xD800) << 10) | (w2 ^ 0xDC00) + 0x10000);
 }
@@ -599,9 +612,7 @@ string::string(const_iterator first, const_iterator last)  : m_tempbuff(NULL), s
 	Destructor delete all data created by string object.
 */
 string::~string() {
-	if(m_tempbuff != NULL) {
-		s()->m_alloc.deallocate(m_tempbuff);
-	}
+	set_tempbuff(NULL);
 }
 
 string& string::operator= (const string& r) {
@@ -948,24 +959,18 @@ string string::substr(size_type from, size_type n) const {
 }
 
 /*!
+    \fn string::utf8_str() const
 	\brief Converts string.
 
 	Returns utf8 null terminated string. Returned string
 	is valid until next *_str() function call or until
 	destruction if \a this object.
 
+    \param err If \b true all encode errors are reported by \a encode_error
+    exception. Otherwise problematic characters are replaced by string::value_type::repl_char().
 	\sa c_str()
 */
-const char* string::utf8_str() const {
-	if(m_tempbuff != NULL) {
-		s()->m_alloc.deallocate(m_tempbuff);
-	}
-	m_tempbuff = s()->m_alloc.allocate(bytes() + 1);
-	s()->m_alloc.copy(m_tempbuff, s()->m_start, bytes());
-	s()->m_alloc.construct(m_tempbuff + bytes(), '\0');
 
-	return m_tempbuff;
-}
 
 /*!
 	\fn const char* string::c_str() const

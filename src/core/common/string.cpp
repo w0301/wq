@@ -24,6 +24,24 @@ namespace wq {
 namespace core {
 
 // string::value_type class
+#define WQ_UC_PROP_INDEX(ucs4) \
+    (ucs4 < 0x11000 \
+    ? (string::value_type::sm_property_trie[string::value_type::sm_property_trie[ucs4>>5] + (ucs4 & 0x1f)]) \
+    : (string::value_type::sm_property_trie[string::value_type::sm_property_trie[((ucs4 - 0x11000)>>8) + 0x880] + (ucs4 & 0xff)]))
+
+/*!
+    \brief Gets properties of character.
+
+    This function returns properties of unicode character.
+
+    \param ucs4 Character which's properties will be returned.
+    \return Structure with properties.
+*/
+const string::value_type::uc_properties* string::value_type::get_uc_properties(wq::uint32 ucs4) {
+    int index = WQ_UC_PROP_INDEX(ucs4);
+    return string::value_type::sm_properties + index;
+}
+
 /*!
 	\class string::value_type
 	\brief Unicode character handler.
@@ -242,7 +260,6 @@ const char* string::value_type::utf8() const {
     m_utf8tmp[oct_count] = '\0';
     return m_utf8tmp;
 }
-
 
 /*!
     \fn string::value_type::operator const char*() const
@@ -602,9 +619,15 @@ string::string(size_type n, const_reference c) : m_tempbuff(NULL), s_ptr(new sha
     assign(n, c);
 }
 
-string::string(const_iterator first, const_iterator last)  : m_tempbuff(NULL), s_ptr(new shared_data) {
+string::string(const_iterator first, const_iterator last) : m_tempbuff(NULL), s_ptr(new shared_data) {
     assign(first, last);
 }
+
+#if WQ_STD_COMPATIBILITY
+string::string(const std::string& std_str, const text_encoder& enc) : m_tempbuff(NULL), s_ptr(new shared_data) {
+    assign( enc.encode(std_str.data(), std_str.size()) );
+}
+#endif
 
 /*!
 	\brief Destruction of string.
@@ -900,6 +923,30 @@ string& string::replace(size_type from, size_type n, const string& with, size_ty
     // adding size
     s()->m_len += n2 - n;
     return *this;
+}
+
+int string::compare(size_type from1, size_type n1, const string& with, size_type from2, size_type n2, bool cs) const {
+    if(n1 == npos) {
+        n1 = size();
+    }
+    n1 = (n1 > size() - from1) ? (size() - from1) : n1;
+    if(n2 == npos) {
+        n2 = with.size();
+    }
+    n2 = (n2 > with.size() - from2) ? (with.size() - from2) : n2;
+
+    const_iterator with_iter = with.begin() + from2;
+    size_type char_num = n1 < n2 ? n1 : n2;
+    const_iterator start_iter = begin() + from1;
+    const_iterator end_iter = start_iter + char_num;
+    while(start_iter != end_iter) {
+        if( (cs && *start_iter != *with_iter) || (!cs && start_iter->lower() != with_iter->lower()) ) {
+            return start_iter->utf32() - with_iter->utf32();
+        }
+        start_iter++;
+        with_iter++;
+    }
+    return n1 == n2 ? 0 : -(n1 < n2 ? with_iter->utf32() : start_iter->utf32());
 }
 
 /*!

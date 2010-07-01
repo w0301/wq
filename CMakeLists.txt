@@ -14,9 +14,6 @@ elseif(WIN32)
     set(WQ_WINDOWS 1)
 endif(UNIX)
 
-# We have to set definition which indicate that libs are beeing built.
-add_definitions(-DWQ_BUILDING)
-
 # We will set the default build mode - of course to Release mode.
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING

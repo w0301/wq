@@ -122,7 +122,98 @@ class WQ_EXPORT string {
                     return value_type(0xFFFD);
                 };
 
-			private:
+                // characters properties etc.
+                struct uc_properties {
+                    ushort category : 8;
+                    ushort line_break_class : 8;
+                    ushort direction : 8;
+                    ushort combining_class :8;
+                    ushort joining : 2;
+                    signed short digit_value : 6;
+                    ushort unicode_version : 4;
+                    ushort lower_case_special : 1;
+                    ushort upper_case_special : 1;
+                    ushort title_case_special : 1;
+                    ushort case_fold_special : 1;
+                    signed short mirror_diff : 16;
+                    signed short lower_case_diff : 16;
+                    signed short upper_case_diff : 16;
+                    signed short title_case_diff : 16;
+                    signed short case_fold_diff : 16;
+                    ushort grapheme_break : 8;
+                    ushort word_break : 8;
+                    ushort sentence_break : 8;
+                };
+                static const uc_properties* get_uc_properties(wq::uint32);
+
+                // testing character's category
+                enum uc_category {
+                    no_category,
+
+                    mark_non_spacing,          //   Mn
+                    mark_spacing_combining,    //   Mc
+                    mark_enclosing,           //   Me
+
+                    number_decimalDigit,      //   Nd
+                    number_letter,            //   Nl
+                    number_other,             //   No
+
+                    separator_space,          //   Zs
+                    separator_line,           //   Zl
+                    separator_paragraph,      //   Zp
+
+                    other_control,            //   Cc
+                    other_format,             //   Cf
+                    other_surrogate,          //   Cs
+                    other_privateUse,         //   Co
+                    other_not_assigned,        //   Cn
+
+                    letter_uppercase,         //   Lu
+                    letter_lowercase,         //   Ll
+                    letter_titlecase,         //   Lt
+                    letter_modifier,          //   Lm
+                    letter_other,             //   Lo
+
+                    punctuation_connector,    //   Pc
+                    punctuation_dash,         //   Pd
+                    punctuation_open,         //   Ps
+                    punctuation_close,        //   Pe
+                    punctuation_initial_quote, //   Pi
+                    punctuation_final_quote,   //   Pf
+                    punctuation_other,        //   Po
+
+                    symbol_math,              //   Sm
+                    symbol_currency,          //   Sc
+                    symbol_modifier,          //   Sk
+                    symbol_other,             //   So
+
+                    punctuation_dask = punctuation_dash // oops
+                };
+                uc_category category() const {
+                    return static_cast<uc_category>(get_uc_properties(m_val)->category);
+                };
+                bool is_lower() const {
+                    return category() == letter_lowercase;
+                };
+                bool is_upper() const {
+                    return category() == letter_uppercase;
+                };
+                bool is_title() const {
+                    return category() == letter_titlecase;
+                };
+
+                // getting lower/upper characters etc.
+                value_type lower() const {
+                    return value_type(m_val + get_uc_properties(m_val)->lower_case_diff);
+                };
+                value_type upper() const {
+                    return value_type(m_val + get_uc_properties(m_val)->upper_case_diff);
+                };
+                value_type title() const {
+                    return value_type(m_val + get_uc_properties(m_val)->title_case_diff);
+                };
+
+            private:
                 friend class string;
 
                 // decoding functions
@@ -136,6 +227,10 @@ class WQ_EXPORT string {
 
                 // temporary buffers for convert functions - ends with 0
                 mutable char m_utf8tmp[5];
+
+                // properties tables
+                static const unsigned short sm_property_trie[];
+                static const uc_properties sm_properties[];
 		};
 
 	    class iterator;
@@ -440,6 +535,10 @@ class WQ_EXPORT string {
 		string(size_type, const_reference);
 		string(const_iterator, const_iterator);
 
+        #if WQ_STD_COMPATIBILITY
+            string(const std::string&, const text_encoder& = utf8_encoder());
+        #endif
+
 		// destruction
 		~string();
 
@@ -565,7 +664,19 @@ class WQ_EXPORT string {
 		    return replace(from - begin(), to - from, count, c);
 		};
 
-		// finding - TODO later
+		// comparing
+		int compare(size_type, size_type, const string&, size_type = 0, size_type = npos, bool = true) const;
+		int compare(const string& with, size_type from = 0, size_type n = npos, bool cs = true) const {
+		    return compare(0, npos, with, from, n, cs);
+		};
+		int compare(const char* str, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		    return compare(string(str, npos, enc), 0, npos, cs);
+		};
+		int compare(size_type from, size_type n, const char* str, size_type size = npos, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		    return compare(from, n, string(str, size, enc), cs);
+		};
+
+		// finding
 
 		// other functions
 		size_type copy(char*, size_type, size_type = 0) const;
@@ -638,7 +749,7 @@ class WQ_EXPORT string {
 }  // namespace core
 }  // namespace wq
 
-// defing movable types
+// define movable types
 WQ_MOVABLE_TYPE(string);
 WQ_MOVABLE_TYPE(string::value_type);
 WQ_MOVABLE_TYPE(string::reference);

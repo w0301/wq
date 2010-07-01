@@ -81,6 +81,16 @@ int main() {
         std::cout << str3.utf8_str() << std::endl;
         str3.append(" ako sa máš?");
         std::cout << str3.utf8_str() << std::endl;
+
+        std::cout << "\n\n\n";
+
+        wq::string str10 = "ahoj ako sa máš";
+        for(int i = 0; i != str10.size(); i++) {
+            std::cout << str10.at(i).utf8() << " : ";
+            wq::string::value_type ch = str10.at(i).is_lower() ? str10.at(i).upper() : str10.at(i).lower();
+            std::cout << ch.utf8() << std::endl;
+        }
+        std::cout << str10.compare("ahoj") << std::endl;
     }
     catch(wq::exception& e) {
         std::cout << e.what() << std::endl;

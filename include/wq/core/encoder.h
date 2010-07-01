@@ -29,7 +29,7 @@ namespace core {
 class string;
 
 // exception that indicates error during encoding
-class encode_error : public wq::core::exception {
+class WQ_EXPORT encode_error : public wq::core::exception {
 	public:
 		encode_error() throw();
 		const char* what() const throw();
@@ -54,7 +54,7 @@ class text_encoder {
 };
 
 // encoder for UTF-8 strings
-class utf8_encoder : public text_encoder {
+class WQ_EXPORT utf8_encoder : public text_encoder {
     public:
         utf8_encoder(bool thexce = true) : text_encoder(thexce) { };
         virtual ~utf8_encoder() { };

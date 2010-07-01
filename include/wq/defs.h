@@ -57,6 +57,7 @@ typedef unsigned long long uint64;
 
 // some shortcuts
 typedef uint32 uint;
+typedef uint16 ushort;
 
 // definition of type that will be used for size types in containers etc.
 typedef std::size_t size_t;

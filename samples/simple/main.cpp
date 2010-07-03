@@ -87,6 +87,9 @@ int main() {
         const int from = 0;
         wq::string str10 = "ahoj ako ahoj máš";
         std::cout << str10.rfind("ako") << std::endl;
+        for(wq::string::const_reverse_iterator i = str10.rbegin(); i != str10.rend(); i++) {
+            std::cout << *i << std::endl;
+        }
     }
     catch(wq::exception& e) {
         std::cout << e.what() << std::endl;

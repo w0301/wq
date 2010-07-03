@@ -298,7 +298,9 @@ class WQ_EXPORT string {
 			public:
 				typedef string::value_type value_type;
 				typedef string::reference reference;
-				typedef value_type* pointer;
+				typedef const reference const_reference;
+				typedef reference* pointer;
+				typedef const reference* const_pointer;
 				typedef string::difference_type difference_type;
 				typedef std::bidirectional_iterator_tag iterator_category;
 
@@ -314,10 +316,10 @@ class WQ_EXPORT string {
 				};
 
 				// converting
-				reference* operator-> () {
+				pointer operator-> () {
 					return &m_val;
 				};
-				const value_type* operator-> () const {
+				const_pointer operator-> () const {
 					return &m_val;
 				};
 				reference operator* () {
@@ -412,11 +414,13 @@ class WQ_EXPORT string {
 		//! Class which represent special constant iterator.
 		class const_iterator {
 			public:
-				typedef string::value_type value_type;
-				typedef string::reference reference;
-				typedef value_type* pointer;
-				typedef string::difference_type difference_type;
-				typedef std::bidirectional_iterator_tag iterator_category;
+                typedef string::value_type value_type;
+                typedef string::reference reference;
+                typedef const reference const_reference;
+                typedef value_type* pointer;
+                typedef const value_type* const_pointer;
+                typedef string::difference_type difference_type;
+                typedef std::bidirectional_iterator_tag iterator_category;
 
 				// creation and copying
 				const_iterator(const reference& val) : m_val(val) { };
@@ -436,7 +440,7 @@ class WQ_EXPORT string {
 				};
 
 				// converting
-				const value_type* operator-> () const {
+				const_pointer operator-> () const {
 					return &m_val;
 				};
 				const_reference operator* () const {

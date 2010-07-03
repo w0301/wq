@@ -477,10 +477,13 @@ string::reference string::reference::prev() const {
     size_type clen = 0;
     while(1) {
         clen++;
-        ret.m_ptr--;
-        if(ret.bytes() != 0) {
-            break;
+        try {
+            ret.rebind( reference( m_owner, (m_ptr - clen) ) );
         }
+        catch(encode_error& err) {
+            continue;
+        }
+        break;
     }
     if(m_ptr - clen > owner()->s()->m_start) {
         return reference(m_owner, m_ptr - clen);
@@ -936,9 +939,8 @@ int string::compare(size_type from1, size_type n1, const string& with, size_type
     n2 = (n2 > with.size() - from2) ? (with.size() - from2) : n2;
 
     const_iterator with_iter = with.begin() + from2;
-    size_type char_num = n1 < n2 ? n1 : n2;
     const_iterator start_iter = begin() + from1;
-    const_iterator end_iter = start_iter + char_num;
+    const_iterator end_iter = start_iter + (n1 < n2 ? n1 : n2);
     while(start_iter != end_iter) {
         if( (cs && *start_iter != *with_iter) || (!cs && start_iter->lower() != with_iter->lower()) ) {
             return start_iter->utf32() - with_iter->utf32();
@@ -947,6 +949,107 @@ int string::compare(size_type from1, size_type n1, const string& with, size_type
         with_iter++;
     }
     return n1 == n2 ? 0 : -(n1 < n2 ? with_iter->utf32() : start_iter->utf32());
+}
+
+string::size_type string::find(const string& what, size_type from, bool cs) const {
+    if(size() - from < what.size()) {
+        return npos;
+    }
+    for(size_type start_at = from; start_at != size(); start_at++) {
+        if(compare(start_at, what.size(), what, 0, npos, cs) == 0) {
+            return start_at;
+        }
+    }
+    return npos;
+}
+
+string::size_type string::rfind(const string& what, size_type from, bool cs) const {
+    if(from == npos) {
+        from = size() - 1;
+    }
+    from = from >= size() ? size() - 1 : from;
+    if(from < what.size()) {
+        return npos;
+    }
+    for(size_type start_at = from + what.size(); start_at >= 0; start_at--) {
+        size_type pos = start_at - what.size();
+        if(compare(pos, what.size(), what, 0, npos, cs) == 0) {
+            return pos;
+        }
+    }
+    return npos;
+}
+
+string::size_type string::find_first_of(const string& str, size_type pos, bool cs) const {
+    const_iterator end_iter = end();
+    const_iterator end_iter2 = str.end();
+    for(const_iterator iter = begin() + pos; iter != end_iter; iter++) {
+        for(const_iterator iter2 = str.begin(); iter2 != end_iter2; iter2++) {
+            if( (cs && *iter == *iter2) || (!cs && iter->lower() == iter2->lower()) ) {
+                return iter - begin();
+            }
+        }
+    }
+    return npos;
+}
+
+string::size_type string::find_first_not_of(const string& str, size_type pos, bool cs) const {
+    const_iterator end_iter = end();
+    const_iterator end_iter2 = str.end();
+    for(const_iterator iter = begin() + pos; iter != end_iter; iter++) {
+        size_type num_of_not = 0;
+        for(const_iterator iter2 = str.begin(); iter2 != end_iter2; iter2++) {
+            // counting of not found characters
+            if( (cs && *iter != *iter2) || (!cs && iter->lower() != iter2->lower()) ) {
+                num_of_not++;
+            }
+        }
+        // returning if there was not character that is in str
+        if(num_of_not == str.size()) {
+            return iter - begin();
+        }
+    }
+    return npos;
+}
+
+string::size_type string::find_last_of(const string& str, size_type pos, bool cs) const {
+    if(pos == npos) {
+        pos = size() - 1;
+    }
+    pos = pos >= size() ? size() - 1 : pos;
+    const_iterator end_iter = begin();
+    const_iterator end_iter2 = str.end();
+    for(const_iterator iter = begin() + pos; iter != end_iter; iter--) {
+        for(const_iterator iter2 = str.begin(); iter2 != end_iter2; iter2++) {
+            if( (cs && *iter == *iter2) || (!cs && iter->lower() == iter2->lower()) ) {
+                return iter - begin();
+            }
+        }
+    }
+    return npos;
+}
+
+string::size_type string::find_last_not_of(const string& str, size_type pos, bool cs) const {
+    if(pos == npos) {
+        pos = size() - 1;
+    }
+    pos = pos >= size() ? size() - 1 : pos;
+    const_iterator end_iter = begin();
+    const_iterator end_iter2 = str.end();
+    for(const_iterator iter = begin() + pos; iter != end_iter; iter--) {
+        size_type num_of_not = 0;
+        for(const_iterator iter2 = str.begin(); iter2 != end_iter2; iter2++) {
+            // counting of not found characters
+            if( (cs && *iter != *iter2) || (!cs && iter->lower() != iter2->lower()) ) {
+                num_of_not++;
+            }
+        }
+        // returning if there was not character that is in str
+        if(num_of_not == str.size()) {
+            return iter - begin();
+        }
+    }
+    return npos;
 }
 
 /*!

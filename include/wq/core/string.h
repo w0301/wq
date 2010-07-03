@@ -298,7 +298,7 @@ class WQ_EXPORT string {
 			public:
 				typedef string::value_type value_type;
 				typedef string::reference reference;
-				typedef reference* pointer;
+				typedef value_type* pointer;
 				typedef string::difference_type difference_type;
 				typedef std::bidirectional_iterator_tag iterator_category;
 
@@ -414,7 +414,7 @@ class WQ_EXPORT string {
 			public:
 				typedef string::value_type value_type;
 				typedef string::reference reference;
-				typedef string::value_type* pointer;
+				typedef value_type* pointer;
 				typedef string::difference_type difference_type;
 				typedef std::bidirectional_iterator_tag iterator_category;
 
@@ -673,10 +673,75 @@ class WQ_EXPORT string {
 		    return compare(string(str, npos, enc), 0, npos, cs);
 		};
 		int compare(size_type from, size_type n, const char* str, size_type size = npos, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
-		    return compare(from, n, string(str, size, enc), cs);
+		    return compare(from, n, string(str, size, enc), 0, npos, cs);
 		};
 
 		// finding
+		size_type find(const string&, size_type = 0, bool = true) const;
+		size_type find(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		    return find(string(s, npos, enc), pos, cs);
+		};
+		size_type find(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		    return find(string(s, n, enc), pos, cs);
+		};
+		size_type find(value_type c, size_type pos = 0, bool cs = true) const {
+		    return find(string(c), pos, cs);
+		};
+
+	    size_type rfind(const string&, size_type = npos, bool = true) const;
+	    size_type rfind(const char* s, size_type pos = npos, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+	        return rfind(string(s, npos, enc), pos, cs);
+	    };
+	    size_type rfind(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+	        return rfind(string(s, n, enc), pos, cs);
+	    };
+	    size_type rfind(value_type c, size_type pos = npos, bool cs = true) const {
+	        return rfind(string(c), pos, cs);
+	    };
+
+        size_type find_first_of(const string&, size_type = 0, bool = true) const;
+        size_type find_first_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_first_of(string(s, npos, enc), pos, cs);
+        };
+        size_type find_first_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_first_of(string(s, n, enc), pos, cs);
+        };
+        size_type find_first_of(value_type c, size_type pos = 0, bool cs = true) const {
+            return find_first_of(string(c), pos, cs);
+        };
+
+        size_type find_first_not_of(const string&, size_type = 0, bool = true) const;
+        size_type find_first_not_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_first_not_of(string(s, npos, enc), pos, cs);
+        };
+        size_type find_first_not_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_first_not_of(string(s, n, enc), pos, cs);
+        };
+        size_type find_first_not_of(value_type c, size_type pos = 0, bool cs = true) const {
+            return find_first_not_of(string(c), pos, cs);
+        };
+
+        size_type find_last_of(const string&, size_type = 0, bool = true) const;
+        size_type find_last_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_last_of(string(s, npos, enc), pos, cs);
+        };
+        size_type find_last_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_last_of(string(s, n, enc), pos, cs);
+        };
+        size_type find_last_of(value_type c, size_type pos = 0, bool cs = true) const {
+            return find_last_of(string(c), pos, cs);
+        };
+
+        size_type find_last_not_of(const string&, size_type = 0, bool = true) const;
+        size_type find_last_not_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_last_not_of(string(s, npos, enc), pos, cs);
+        };
+        size_type find_last_not_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+            return find_last_not_of(string(s, n, enc), pos, cs);
+        };
+        size_type find_last_not_of(value_type c, size_type pos = 0, bool cs = true) const {
+            return find_last_not_of(string(c), pos, cs);
+        };
 
 		// other functions
 		size_type copy(char*, size_type, size_type = 0) const;

@@ -171,6 +171,7 @@ string::value_type& string::value_type::operator= (const value_type& r) {
 }
 
 /*!
+    \fn bool string::value_type::operator== (const value_type&) const
     \brief Compare operator.
 
     Compare character in \a this object with character
@@ -180,15 +181,17 @@ string::value_type& string::value_type::operator= (const value_type& r) {
 */
 
 /*!
+    \fn bool string::value_type::operator== (const char*) const
     \brief Compare operator.
 
     Compare character in \this object with character describes
-    in \a r string.
+    in \a r UTF-8 encoded string.
 
     \return Returns \b true when characters are identical.
 */
 
 /*!
+    \fn bool string::value_type::operator== (char) const
     \brief Compare operator.
 
     Compare character in \this object with character \a c.

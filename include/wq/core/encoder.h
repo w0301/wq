@@ -63,6 +63,18 @@ class WQ_EXPORT utf8_encoder : public text_encoder {
         virtual char* decode(const string&, wq::size_t* = NULL) const;
 };
 
+// encoder for CP1250 strings
+class WQ_EXPORT cp1250_encoder : public text_encoder {
+    public:
+        cp1250_encoder(bool thexce = true) : text_encoder(thexce) { };
+        virtual ~cp1250_encoder() { };
+
+        virtual string encode(const char*, wq::size_t = -1) const;
+        virtual char* decode(const string&, wq::size_t* = NULL) const;
+
+    private:
+        static const wq::uint32 sm_mapping_array[];
+};
 
 }  // namespace core
 }  // namespace wq

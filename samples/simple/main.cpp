@@ -27,6 +27,7 @@
 #include "wq/core/string.h"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 namespace wq {

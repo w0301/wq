@@ -767,8 +767,11 @@ class WQ_EXPORT string {
 		};
 
 		// converting
+		const char* any_str(const text_encoder& enc) const {
+		    return set_tempbuff( enc.decode(*this) );
+		}
 		const char* utf8_str(bool err = true) const {
-		    return set_tempbuff( utf8_encoder(err).decode(*this) );
+		    return any_str( utf8_encoder(err) );
 		};
 		const char* c_str(bool err = true) const {
 			return utf8_str(err);

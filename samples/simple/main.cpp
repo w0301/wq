@@ -31,9 +31,14 @@
 #include <string>
 
 namespace wq {
-using namespace core;
+    using namespace core;
 }
 
+/*!
+    This the simplest sample program without any purpose.
+    It's just for testing, feel free to modify it or even
+    delete whole contents.
+*/
 int main() {
     try {
         wq::string str("článku");

@@ -29,8 +29,9 @@ namespace core {
 // class for handling implicitly shared pieces of data
 template<class T> class shared_ptr {
 	public:
-		typedef T data_type;
-		typedef data_type* pointer;
+        typedef T data_type;
+        typedef T pointer_type;
+		typedef pointer_type* pointer;
 		typedef const pointer const_pointer;
 
 		// creation
@@ -155,12 +156,6 @@ template<class T> void shared_ptr<T>::unshare_data() {
         };                                                              \
         const shared_data *s() const {                                  \
             return static_cast<const shared_data*>( s_ptr.data() );     \
-        };                                                              \
-        void set_shared_data(const wq::core::shared_ptr<shared_data>& ptr) {   \
-            s_ptr.set_data(ptr);                                         \
-        };                                                              \
-        void unshare_data() {                                      \
-            s_ptr.unshare_data();                                        \
         };
 
 #define WQ_NEW_SHARED_DATA()                    \

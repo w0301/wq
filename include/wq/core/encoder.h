@@ -22,11 +22,13 @@
 #include "wq/defs.h"
 #include "wq/core/exception.h"
 #include "wq/core/shared_ptr.h"
+#include "wq/core/auto_ptr.h"
 
 namespace wq {
 namespace core {
 
 class string;
+class utf8_encoder;
 
 // exception that indicates error during encoding
 class WQ_EXPORT encode_error : public wq::core::exception {
@@ -36,27 +38,48 @@ class WQ_EXPORT encode_error : public wq::core::exception {
 };
 
 // base class of text encoding classes between 8-bit encodings
-class text_encoder {
+class WQ_EXPORT text_encoder {
     public:
         // just abstract class
         text_encoder(bool thexce = true) : m_thexce(thexce)  { };
+        text_encoder(const text_encoder& from) : m_thexce(from.is_throwing())  { };
+        text_encoder& operator= (const text_encoder& from) {
+            m_thexce = from.is_throwing();
+            return *this;
+        };
         virtual ~text_encoder() { };
 
         bool is_throwing() const {
             return m_thexce;
         };
+        void set_throwing(bool thexce) const {
+            // TODO: make text_encoder::set_throwing thread-safe
+            m_thexce = thexce;
+        };
 
-        virtual string encode(const char*, wq::size_t = -1) const = 0;
-        virtual char* decode(const string&, wq::size_t* = NULL) const = 0;
+        virtual string encode(const char*, wq::size_t = -1) const;
+        virtual char* decode(const string&, wq::size_t* = NULL) const {
+            return NULL;
+        };
+
+        // manipulating with default encoder
+        static const text_encoder* system_encoder(bool = true);
+        static const text_encoder* wq_encoder(bool = true);
+        static const text_encoder* default_encoder(bool = true);
+        static void set_default_encoder(text_encoder* enc) {
+            sm_default_encoder = enc;
+        };
 
     private:
-        bool m_thexce;
+        mutable bool m_thexce;
+        static auto_ptr<text_encoder> sm_default_encoder;
 };
 
 // encoder for UTF-8 strings
 class WQ_EXPORT utf8_encoder : public text_encoder {
     public:
         utf8_encoder(bool thexce = true) : text_encoder(thexce) { };
+
         virtual ~utf8_encoder() { };
 
         virtual string encode(const char*, wq::size_t = -1) const;
@@ -67,6 +90,11 @@ class WQ_EXPORT utf8_encoder : public text_encoder {
 class WQ_EXPORT cp1250_encoder : public text_encoder {
     public:
         cp1250_encoder(bool thexce = true) : text_encoder(thexce) { };
+        cp1250_encoder(const cp1250_encoder& from) : text_encoder(from)  { };
+        cp1250_encoder& operator= (const cp1250_encoder& from) {
+            text_encoder::operator= (from);
+            return *this;
+        };
         virtual ~cp1250_encoder() { };
 
         virtual string encode(const char*, wq::size_t = -1) const;
@@ -74,6 +102,16 @@ class WQ_EXPORT cp1250_encoder : public text_encoder {
 
     private:
         static const wq::uint32 sm_mapping_array[];
+};
+
+// functions
+inline static const text_encoder& default_encoder(bool thexce = true) {
+#ifdef WQ_BUILDING
+    // if we are building we always use wq default encoding!
+    return *text_encoder::wq_encoder(thexce);
+#else
+    return *text_encoder::default_encoder(thexce);
+#endif
 };
 
 }  // namespace core

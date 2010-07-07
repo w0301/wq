@@ -38,5 +38,27 @@ const char* bad_alloc::what() const throw() {
 	return "bad allocation";
 }
 
+// allocator<void> class
+allocator<void>::pointer allocator<void>::allocate(size_type n, void*) {
+    if(n > max_size()) {
+        throw bad_alloc();
+    }
+    return malloc(type_info<value_type>::size() * n);
+};
+
+void allocator<void>::deallocate(pointer mem, size_type) {
+    if(mem == NULL) {
+        throw bad_alloc();
+    }
+    free(mem);
+};
+
+allocator<void>::pointer allocator<void>::reallocate(pointer mem, size_type old_size, size_type new_size) {
+    if(new_size > max_size()) {
+        throw bad_alloc();
+    }
+    return realloc(mem, new_size);
+};
+
 }  // namespace core
 }  // namespace wq

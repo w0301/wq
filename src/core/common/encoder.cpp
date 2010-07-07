@@ -18,6 +18,7 @@
 
 #include "wq/core/string.h"
 #include "wq/core/encoder.h"
+#include "wq/core/locale.h"
 
 #include <cstring>
 
@@ -31,6 +32,65 @@ encode_error::encode_error() throw() : wq::core::exception() {
 
 const char* encode_error::what() const throw() {
 	return "encode error occurred";
+}
+
+// text_encoder class
+auto_ptr<text_encoder> text_encoder::sm_default_encoder = NULL;
+
+string text_encoder::encode(const char*, wq::size_t) const {
+    return string();
+}
+
+/*!
+    \brief System encoder.
+
+    This function returns pointer to encoder that encode/decode
+    strings to/from system's (os's) encoding.
+
+    \param thexce \b True if you wish returned encoding to report errors by encode_error exception.
+    \sa default_encoder(), wq_encoder()
+*/
+const text_encoder* text_encoder::system_encoder(bool thexce) {
+    static auto_ptr<text_encoder> s_sys_encoder;
+    s_sys_encoder = locale::system_locale().encoder(thexce);
+    return s_sys_encoder.data();
+}
+
+/*!
+    \brief Wq libraries encoder.
+
+    This function returns pointer to encoder that is used
+    in all wq's header and source files. This encoder is used
+    during build of libraries to encode/decode strings => when
+    building libraries this encoder is returned by wq::core::default_encoder().
+
+    \param thexce \b True if you wish returned encoding to report errors by encode_error exception.
+    \sa wq::core::default_encoder(), default_encoder(), system_encoder()
+*/
+const text_encoder* text_encoder::wq_encoder(bool thexce) {
+    static auto_ptr<text_encoder> s_wq_encoder = new utf8_encoder();
+    s_wq_encoder->set_throwing(thexce);
+    return s_wq_encoder.data();
+};
+
+/*!
+    \brief Default encoding.
+
+    This functions returns pointer to encoder that is returned
+    by wq::core::default_encoder() function when not building wq
+    libraries. As default this encoder is same as system_encoder()
+    however user can change it by set_default_encoder() function.
+
+    \param thexce \b True if you wish returned encoding to report errors by encode_error exception.
+    \sa wq_encoder(), system_encoder(), wq::core::default_encoder(), set_default_encoder()
+*/
+const text_encoder* text_encoder::default_encoder(bool thexce) {
+    if(sm_default_encoder.is_ok()) {
+        sm_default_encoder->set_throwing(thexce);
+        return sm_default_encoder.data();
+    }
+    set_default_encoder( const_cast<text_encoder*>(system_encoder()) );
+    return default_encoder(thexce);
 }
 
 // utf8_encoder class

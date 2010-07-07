@@ -78,7 +78,8 @@ endif(WQ_BUILD_SAMPLES)
 # Install commands for libraries are in the CMakeLists.txt files in src/ subdirectory.
 if(UNIX)
 	# headers
-	install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/wq/" DESTINATION "include/wq" FILES_MATCHING PATTERN "*.h")
+	install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/wq/" DESTINATION "include/wq" 
+	        FILES_MATCHING PATTERN "*.h" PATTERN "p" EXCLUDE)
 	# and config header
 	install(FILES "${PROJECT_BINARY_DIR}/include/wq/config.h" DESTINATION "include/wq")
 else(NOT UNIX)

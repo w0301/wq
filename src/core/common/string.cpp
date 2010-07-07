@@ -671,7 +671,13 @@ void string::reserve(size_type least_size) {
     // resize only if it is needed
     size_type old_capacity = s()->m_end - s()->m_start;
     size_type old_size = s()->m_last - s()->m_start;
-    if(old_capacity < old_size + least_size) {
+    if(least_size == 0) {
+        // now we want deallocate unneeded space
+        s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, old_size);
+        s()->m_end = s()->m_start + old_size;
+        s()->m_last = s()->m_start + old_size;
+    }
+    else if(old_capacity < old_size + least_size) {
         // finding new capacity - always by multiplying with 2
         size_type least_capacity = old_size + least_size;
         size_type new_capacity = old_capacity == 0 ? 1 : old_capacity;
@@ -767,7 +773,7 @@ string& string::append(const string& str, size_type from, size_type size) {
 
     if(size > 0) {
         const_iterator first = str.begin() + from;
-        const_iterator last = first + (size - from);
+        const_iterator last = first + size;
         size_type bytes_size = last.ptr() - first.ptr();
         reserve(bytes_size);
         s()->m_last = s()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
@@ -805,7 +811,7 @@ string& string::insert(size_type i, const string& str, size_type from, size_type
 
     if(size > 0) {
         const_iterator copy_from = str.begin() + from;
-        const_iterator copy_to = copy_from + (size - from);
+        const_iterator copy_to = copy_from + size;
         size_type insert_size = copy_to.ptr() - copy_from.ptr();
 
         reserve(insert_size);

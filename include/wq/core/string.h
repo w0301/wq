@@ -52,7 +52,7 @@ class WQ_EXPORT string {
 				value_type();
 				value_type(int val);
 				value_type(wq::uint32 val) : m_val(val) { };
-				value_type(char, const text_encoder& = utf8_encoder());
+				value_type(char, const text_encoder& = default_encoder());
 				value_type(const char*, bool = true);
 				value_type(wq::uint16, wq::uint16, bool = true);
 
@@ -73,7 +73,7 @@ class WQ_EXPORT string {
 				    return operator= ( value_type(val) );
 				};
 				value_type& operator= (char c) {
-				    return operator= ( value_type(c, utf8_encoder()) );
+				    return operator= ( value_type(c, default_encoder()) );
 				};
 
                 // comparing
@@ -120,6 +120,9 @@ class WQ_EXPORT string {
                 // special characters
                 static value_type repl_char() {
                     return value_type(0xFFFD);
+                };
+                static value_type delim_char() {
+                    return value_type(0x7C);
                 };
 
                 // characters properties etc.
@@ -534,13 +537,13 @@ class WQ_EXPORT string {
 
 		// construction
 		string();
-		string(const char*, size_type = npos, const text_encoder& = utf8_encoder());
+		string(const char*, size_type = npos, const text_encoder& = default_encoder());
 		string(const string&);
 		string(size_type, const_reference);
 		string(const_iterator, const_iterator);
 
         #if WQ_STD_COMPATIBILITY
-            string(const std::string&, const text_encoder& = utf8_encoder());
+            string(const std::string&, const text_encoder& = default_encoder());
         #endif
 
 		// destruction
@@ -616,7 +619,7 @@ class WQ_EXPORT string {
 
 		// assigning
 		string& assign(const string&, size_type = 0, size_type = npos);
-		string& assign(const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		string& assign(const char* str, size_type size = npos, const text_encoder& enc = default_encoder()) {
 		    return assign( string(str, size, enc) );
 		};
 		string& assign(size_type, const_reference);
@@ -624,7 +627,7 @@ class WQ_EXPORT string {
 
 		// appending
 		string& append(const string&, size_type = 0, size_type = npos);
-		string& append(const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		string& append(const char* str, size_type size = npos, const text_encoder& enc = default_encoder()) {
 		    return append( string(str, size, enc) );
 		};
 		string& append(size_type, const_reference);
@@ -632,14 +635,14 @@ class WQ_EXPORT string {
 
 		// inserting
 		string& insert(size_type, const string&, size_type = 0, size_type = npos);
-		string& insert(size_type i, const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		string& insert(size_type i, const char* str, size_type size = npos, const text_encoder& enc = default_encoder()) {
 		    return insert( i, string(str, size, enc) );
 		};
 		string& insert(size_type i, size_type n, const_reference c) {
 		    return insert( i, string(n, c) );
 		}
 		iterator insert(iterator, const string&, size_type = 0, size_type = npos);
-		iterator insert(iterator, const char*, size_type = npos, const text_encoder& = utf8_encoder());
+		iterator insert(iterator, const char*, size_type = npos, const text_encoder& = default_encoder());
 		iterator insert(iterator, size_type, const_reference);
 
 		// erasing
@@ -649,7 +652,7 @@ class WQ_EXPORT string {
 
 		// replacing - index versions (start position + size) and iterators version
 		string& replace(size_type, size_type, const string&, size_type = 0, size_type = npos);
-		string& replace(size_type from, size_type n, const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		string& replace(size_type from, size_type n, const char* str, size_type size = npos, const text_encoder& enc = default_encoder()) {
 		    return replace( from, n, string(str, size, enc) );
 		};
 		string& replace(size_type from, size_type n, size_type count, const_reference c) {
@@ -661,7 +664,7 @@ class WQ_EXPORT string {
 		string& replace(iterator from, iterator to, const_iterator from2, const_iterator to2) {
 		    return replace( from, to, string(from2, to2) );
 		};
-		string& replace(iterator from, iterator to, const char* str, size_type size = npos, const text_encoder& enc = utf8_encoder()) {
+		string& replace(iterator from, iterator to, const char* str, size_type size = npos, const text_encoder& enc = default_encoder()) {
 		    return replace(from - begin(), to - from, str, size, enc);
 		};
 		string& replace(iterator from, iterator to, size_type count, const_reference c) {
@@ -673,78 +676,78 @@ class WQ_EXPORT string {
 		int compare(const string& with, size_type from = 0, size_type n = npos, bool cs = true) const {
 		    return compare(0, npos, with, from, n, cs);
 		};
-		int compare(const char* str, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		int compare(const char* str, bool cs = true, const text_encoder& enc = default_encoder()) const {
 		    return compare(string(str, npos, enc), 0, npos, cs);
 		};
-		int compare(size_type from, size_type n, const char* str, size_type size = npos, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		int compare(size_type from, size_type n, const char* str, size_type size = npos, bool cs = true, const text_encoder& enc = default_encoder()) const {
 		    return compare(from, n, string(str, size, enc), 0, npos, cs);
 		};
 
 		// finding
 		size_type find(const string&, size_type = 0, bool = true) const;
-		size_type find(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		size_type find(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = default_encoder()) const {
 		    return find(string(s, npos, enc), pos, cs);
 		};
-		size_type find(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+		size_type find(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = default_encoder()) const {
 		    return find(string(s, n, enc), pos, cs);
 		};
 		size_type find(value_type c, size_type pos = 0, bool cs = true) const {
-		    return find(string(c), pos, cs);
+		    return find(string(1, c), pos, cs);
 		};
 
 	    size_type rfind(const string&, size_type = npos, bool = true) const;
-	    size_type rfind(const char* s, size_type pos = npos, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+	    size_type rfind(const char* s, size_type pos = npos, bool cs = true, const text_encoder& enc = default_encoder()) const {
 	        return rfind(string(s, npos, enc), pos, cs);
 	    };
-	    size_type rfind(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+	    size_type rfind(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = default_encoder()) const {
 	        return rfind(string(s, n, enc), pos, cs);
 	    };
 	    size_type rfind(value_type c, size_type pos = npos, bool cs = true) const {
-	        return rfind(string(c), pos, cs);
+	        return rfind(string(1, c), pos, cs);
 	    };
 
         size_type find_first_of(const string&, size_type = 0, bool = true) const;
-        size_type find_first_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_first_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_first_of(string(s, npos, enc), pos, cs);
         };
-        size_type find_first_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_first_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_first_of(string(s, n, enc), pos, cs);
         };
         size_type find_first_of(value_type c, size_type pos = 0, bool cs = true) const {
-            return find_first_of(string(c), pos, cs);
+            return find_first_of(string(1, c), pos, cs);
         };
 
         size_type find_first_not_of(const string&, size_type = 0, bool = true) const;
-        size_type find_first_not_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_first_not_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_first_not_of(string(s, npos, enc), pos, cs);
         };
-        size_type find_first_not_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_first_not_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_first_not_of(string(s, n, enc), pos, cs);
         };
         size_type find_first_not_of(value_type c, size_type pos = 0, bool cs = true) const {
-            return find_first_not_of(string(c), pos, cs);
+            return find_first_not_of(string(1, c), pos, cs);
         };
 
         size_type find_last_of(const string&, size_type = 0, bool = true) const;
-        size_type find_last_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_last_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_last_of(string(s, npos, enc), pos, cs);
         };
-        size_type find_last_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_last_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_last_of(string(s, n, enc), pos, cs);
         };
         size_type find_last_of(value_type c, size_type pos = 0, bool cs = true) const {
-            return find_last_of(string(c), pos, cs);
+            return find_last_of(string(1, c), pos, cs);
         };
 
         size_type find_last_not_of(const string&, size_type = 0, bool = true) const;
-        size_type find_last_not_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_last_not_of(const char* s, size_type pos = 0, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_last_not_of(string(s, npos, enc), pos, cs);
         };
-        size_type find_last_not_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = utf8_encoder()) const {
+        size_type find_last_not_of(const char* s, size_type pos, size_type n, bool cs = true, const text_encoder& enc = default_encoder()) const {
             return find_last_not_of(string(s, n, enc), pos, cs);
         };
         size_type find_last_not_of(value_type c, size_type pos = 0, bool cs = true) const {
-            return find_last_not_of(string(c), pos, cs);
+            return find_last_not_of(string(1, c), pos, cs);
         };
 
 		// other functions
@@ -765,6 +768,16 @@ class WQ_EXPORT string {
 		string& operator+= (const_reference c) {
 		    return append(c);
 		};
+
+		string operator+ (const string& str) {
+            return string(*this).append(str);
+        };
+        string operator+ (const char* str) {
+            return string(*this).append(str);
+        };
+        string operator+ (const_reference c) {
+            return string(*this).append(c);
+        };
 
 		// converting
 		const char* any_str(const text_encoder& enc) const {

@@ -17,10 +17,14 @@
 ****************************************************************************/
 
 /*!
-    \class wq::core::private_ptr
-    \brief Holds auto pointer to internal data.
+    \class wq::core::auto_ptr
+    \brief Holds auto deallocated pointer.
 
-    This class is used to hold pointer to internal data of other
+    You can use this class to hold pointer to any type.
+    Please remember that data pointed by pointer will be
+    dealloacated after \a auto_ptr object destruction.
+
+    In wq this class is used to hold pointer to internal data of other
     classes in wq libraries. Those data are represented as sub-class
     of the data owner class. The sub-class has to be called \b private_data
     and it's declaration should be in different include file, I recommend to
@@ -32,9 +36,9 @@
     after that you have one common source file that just use \b private_data multiplatform
     functions.
 
-    One can start using this system for it's class by using WQ_NEW_PRIVATE_DATA() and
-    WQ_PRIVATE_DATA() macro in protected part of class's body. Or if you have access to
-    parent's \b private_data class you can use only WQ_PRIVATE_DATA() macro and inherit
+    One can start using this system for it's class by calling WQ_NEW_PRIVATE_DATA()
+    macro in protected part of class's body. Or if you have access to
+    parent's \b private_data class you can use WQ_PRIVATE_DATA() macro insted and inherit
     your \b private_data class from parent's \b private_data class.
 
     <h2>Using this system looks like this:</h2>
@@ -48,8 +52,8 @@
 
         protected:
             class private_data;     // this is necessary <= macros do not do it!
-            WQ_NEW_PRIVATE_DATA();  // if we have access to parents private_data this is not needed
-            WQ_PRIVATE_DATA();
+            WQ_NEW_PRIVATE_DATA();  // if we have access to parents private_data this is
+                                    // replaced by WQ_PRIVATE_DATA()
     };
     \endcode
 
@@ -106,15 +110,15 @@
     \brief Declares new private data.
 
     If you use this macro in your class body declaration (usually in protected part) you get
-    new \b private_ptr that points to instant of \b private_data sub-class of your class (you have
-    to implement this class too). This macro has to be followed by calling to WQ_PRIVATE_DATA() macro.
+    new \b auto_ptr that points to instant of \b private_data sub-class of your class (you have
+    to implement this class too). This macro automatically call WQ_PRIVATE_DATA() macro.
     If you use this macro you do not need access to class's parent's \b private_data class and you do not
     have to inherit your \b private_data from parent's one.
 
-    This macro declare \a p_ptr object of type \b private_ptr<private_data>.
+    This macro declare \a p_ptr object of type \b auto_ptr<private_data>.
 
-    \relates wq::core::private_ptr
-    \sa private_ptr, WQ_PRIVATE_DATA()
+    relates wq::core::auto_ptr
+    \sa auto_ptr, WQ_PRIVATE_DATA()
 */
 
 /*!
@@ -127,8 +131,8 @@
 
     Please remember that you have to put declaration of \b private_data class
     somewhere before this macro in class body, most likely in protected section. However
-    description of \b private_data class body should be in private header (see private_ptr).
+    description of \b private_data class body should be in private header (see auto_ptr).
 
-    \relates wq::core::private_ptr
-    \sa private_ptr, WQ_PRIVATE_DATA()
+    \relates wq::core::auto_ptr
+    \sa auto_ptr, WQ_NEW_PRIVATE_DATA()
 */

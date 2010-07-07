@@ -16,8 +16,8 @@
 **
 ****************************************************************************/
 
-#ifndef WQ_PRIVATE_PTR_H
-#define WQ_PRIVATE_PTR_H
+#ifndef WQ_AUTO_PTR_H
+#define WQ_AUTO_PTR_H
 
 #include "wq/defs.h"
 #include "wq/core/type_info.h"
@@ -25,7 +25,7 @@
 namespace wq {
 namespace core {
 
-template<class T> class private_ptr {
+template<class T> class auto_ptr {
     public:
         typedef T data_type;
         typedef T pointer_type;
@@ -33,13 +33,17 @@ template<class T> class private_ptr {
         typedef const pointer const_pointer;
 
         // creation
-        private_ptr(pointer new_data = NULL) : m_ptr(new_data) { };
-        private_ptr(const private_ptr& from) : m_ptr(new data_type(*from.data())) { };
-        private_ptr& operator= (const private_ptr&);
-        private_ptr& operator= (pointer);
+        auto_ptr(pointer new_data = NULL) : m_ptr(new_data) { };
+        auto_ptr(const auto_ptr& from) : m_ptr(from.is_ok() ? new data_type(*from.data()) : NULL) { };
+        auto_ptr& operator= (const auto_ptr&);
+        auto_ptr& operator= (pointer);
 
         // destruction
-        ~private_ptr() {
+        ~auto_ptr() {
+            free();
+        };
+
+        void free() {
             if(m_ptr != NULL) {
                 delete m_ptr;
             }
@@ -77,7 +81,7 @@ template<class T> class private_ptr {
         pointer m_ptr;
 };
 
-template<class T> private_ptr<T>& private_ptr<T>::operator= (const private_ptr<T>& r) {
+template<class T> auto_ptr<T>& auto_ptr<T>::operator= (const auto_ptr<T>& r) {
     if(this != &r) {
         if(m_ptr != NULL) {
             delete m_ptr;
@@ -87,12 +91,12 @@ template<class T> private_ptr<T>& private_ptr<T>::operator= (const private_ptr<T
     return *this;
 }
 
-template<class T> private_ptr<T>& private_ptr<T>::operator= (pointer r) {
+template<class T> auto_ptr<T>& auto_ptr<T>::operator= (pointer r) {
     if(r != m_ptr) {
         if(m_ptr != NULL) {
             delete m_ptr;
         }
-        m_ptr = new data_type(*r);
+        m_ptr = r;
     }
     return *this;
 }
@@ -111,7 +115,7 @@ template<class T> private_ptr<T>& private_ptr<T>::operator= (pointer r) {
         };
 
 #define WQ_NEW_PRIVATE_DATA()                    \
-        wq::core::private_ptr<private_data> p_ptr;     \
+        wq::core::auto_ptr<private_data> p_ptr;     \
         typedef private_data base_private_data;       \
         WQ_PRIVATE_DATA();
 
@@ -120,6 +124,6 @@ template<class T> private_ptr<T>& private_ptr<T>::operator= (pointer r) {
 }  // namespace wq
 
 // defining as movable
-WQ_MOVABLE_TEMPLATE_TYPE_1(private_ptr);
+WQ_MOVABLE_TEMPLATE_TYPE_1(auto_ptr);
 
-#endif  // WQ_PRIVATE_PTR_H
+#endif  // WQ_AUTO_PTR_H

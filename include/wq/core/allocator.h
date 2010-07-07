@@ -51,8 +51,48 @@ class WQ_EXPORT bad_alloc :
 template<class T> class allocator;
 template<class T> class allocator<T&>;
 
-// void specialization of class - TODO
-template<> class allocator<void>;
+// void specialization of class
+template<> class WQ_EXPORT allocator<void> {
+    public:
+        // some definitions from STL
+        typedef void value_type;
+        typedef value_type* pointer;
+        typedef const value_type* const_pointer;
+        typedef wq::size_t size_type;
+        typedef wq::ptrdiff_t difference_type;
+
+        // basic construction
+        allocator() { };
+        allocator(const allocator&) { };
+        allocator& operator= (const allocator&) {
+            return *this;
+        };
+
+        // construction from allocator for other types
+        template<class To> allocator(const allocator<To>&) { };
+        template<class To> allocator& operator= (const allocator<To>&) {
+            return *this;
+        };
+
+        // some return functions, pointless but declared in STL allocator
+        // and mine is suppose to by compatible
+        size_type max_size() const {
+            return size_type(-1);
+        };
+
+        // now functions for allocating
+        pointer allocate(size_type, void* = NULL);
+        void deallocate(pointer, size_type = -1);
+        pointer reallocate(pointer, size_type, size_type);
+
+        // operating with memory
+        pointer copy(pointer dest, const_pointer mem, size_type n) {
+            return static_cast<void*>(static_cast<char*>(memcpy(dest, mem, n)) + n);
+        };
+        pointer ocopy(pointer dest, const_pointer mem, size_type n) {
+            return static_cast<void*>(static_cast<char*>(memmove(dest, mem, n)) + n);
+        };
+};
 
 // basic allocator and also base class (or just pattern)
 // for all other allocators in wq framework
@@ -120,7 +160,10 @@ template<class T> class allocator {
 };
 
 template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_size, size_type new_size) {
-	pointer retval = NULL;
+    if(new_size > max_size()) {
+        throw bad_alloc();
+    }
+    pointer retval = NULL;
 	if(type_info<value_type>::is_movable()) {
 		// if type is moveable we can use realloc function
 		retval = static_cast<pointer>( ::realloc(static_cast<void*>(old_ptr),
@@ -141,7 +184,7 @@ template<class T> T* allocator<T>::reallocate(pointer old_ptr, size_type old_siz
 }
 
 template<class T> T* allocator<T>::copy(pointer dest, const_pointer mem, size_type n) {
-	if(type_info<value_type>::is_movable()) {
+    if(type_info<value_type>::is_movable()) {
 		// this is not overlap safe copying
 		memcpy(static_cast<void*>(dest), static_cast<const void*>(mem), type_info<value_type>::size() * n);
 	}

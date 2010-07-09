@@ -16,37 +16,31 @@
 **
 ****************************************************************************/
 
-#include "wq/wq.h"
+#ifndef WQ_CORE_H
+#define WQ_CORE_H
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <clocale>
+// definitions
+#include "wq/core/defs.h"
 
-namespace wq {
-    using namespace core;
-}
+// exceptions
+#include "wq/core/exception.h"
 
-/*!
-    This the simplest sample program without any purpose.
-    It's just for testing, feel free to modify it or even
-    delete whole contents.
-*/
-int main() {
-   try {
-        wq::locale lc = wq::locale::system_locale();
-        std::cout << lc.name().utf8_str() << std::endl;
-        std::cout << lc.encoding().utf8_str() << std::endl;
+// memory management
+#include "wq/core/atomic.h"
+#include "wq/core/auto_ptr.h"
+#include "wq/core/allocator.h"
 
-        wq::string str = "ahoj ako sa máš";
-        std::cout << str.utf8_str() << std::endl;
-    }
-    catch(wq::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 0;
-}
+// strings etc.
+#include "wq/core/string.h"
+#include "wq/core/encoder.h"
 
+// other containers
+#include "wq/core/list.h"
+#include "wq/core/vector.h"
+#include "wq/core/string_list.h"
 
+// other
+#include "wq/core/locale.h"
+#include "wq/core/type_info.h"
 
-
+#endif  // WQ_CORE_H

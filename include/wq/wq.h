@@ -16,37 +16,13 @@
 **
 ****************************************************************************/
 
-#include "wq/wq.h"
+#ifndef WQ_H
+#define WQ_H
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <clocale>
+// defines
+#include "wq/defs.h"
 
-namespace wq {
-    using namespace core;
-}
+// other module's include file, TODO: are they built - macro for each built module
+#include "wq/core/core.h"
 
-/*!
-    This the simplest sample program without any purpose.
-    It's just for testing, feel free to modify it or even
-    delete whole contents.
-*/
-int main() {
-   try {
-        wq::locale lc = wq::locale::system_locale();
-        std::cout << lc.name().utf8_str() << std::endl;
-        std::cout << lc.encoding().utf8_str() << std::endl;
-
-        wq::string str = "ahoj ako sa máš";
-        std::cout << str.utf8_str() << std::endl;
-    }
-    catch(wq::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 0;
-}
-
-
-
-
+#endif  // WQ_H

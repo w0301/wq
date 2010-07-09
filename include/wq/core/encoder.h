@@ -19,9 +19,8 @@
 #ifndef WQ_ENCODER_H
 #define WQ_ENCODER_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 #include "wq/core/exception.h"
-#include "wq/core/shared_ptr.h"
 #include "wq/core/auto_ptr.h"
 
 namespace wq {
@@ -52,7 +51,7 @@ class WQ_EXPORT text_encoder {
         bool is_throwing() const {
             return m_thexce;
         };
-        void set_throwing(bool thexce) const {
+        void set_throwing(bool thexce) {
             // TODO: make text_encoder::set_throwing thread-safe
             m_thexce = thexce;
         };
@@ -63,16 +62,16 @@ class WQ_EXPORT text_encoder {
         };
 
         // manipulating with default encoder
-        static const text_encoder* system_encoder(bool = true);
-        static const text_encoder* wq_encoder(bool = true);
-        static const text_encoder* default_encoder(bool = true);
-        static void set_default_encoder(text_encoder* enc) {
-            sm_default_encoder = enc;
+        static const text_encoder& system_encoder(bool = true);
+        static const text_encoder& wq_encoder(bool = true);
+        static const text_encoder& default_encoder(bool = true);
+        static void set_default_encoder(const text_encoder& enc) {
+            sm_default_encoder = const_cast<text_encoder&>(enc);
         };
 
     private:
-        mutable bool m_thexce;
-        static auto_ptr<text_encoder> sm_default_encoder;
+        bool m_thexce;
+        static text_encoder& sm_default_encoder;
 };
 
 // encoder for UTF-8 strings
@@ -104,13 +103,28 @@ class WQ_EXPORT cp1250_encoder : public text_encoder {
         static const wq::uint32 sm_mapping_array[];
 };
 
-// functions
+// encoder for ASCII strings
+class WQ_EXPORT ascii_encoder : public text_encoder {
+    public:
+        ascii_encoder(bool thexce = true) : text_encoder(thexce) { };
+        ascii_encoder(const ascii_encoder& from) : text_encoder(from)  { };
+        ascii_encoder& operator= (const ascii_encoder& from) {
+            text_encoder::operator= (from);
+            return *this;
+        };
+        virtual ~ascii_encoder() { };
+
+        virtual string encode(const char*, wq::size_t = -1) const;
+        virtual char* decode(const string&, wq::size_t* = NULL) const;
+};
+
+// default encoder - just inline function
 inline static const text_encoder& default_encoder(bool thexce = true) {
 #ifdef WQ_BUILDING
     // if we are building we always use wq default encoding!
-    return *text_encoder::wq_encoder(thexce);
+    return text_encoder::wq_encoder(thexce);
 #else
-    return *text_encoder::default_encoder(thexce);
+    return text_encoder::default_encoder(thexce);
 #endif
 };
 

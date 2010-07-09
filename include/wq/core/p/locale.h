@@ -16,16 +16,16 @@
 **
 ****************************************************************************/
 
-#ifndef WQ_P_LOCALE_H
-#define WQ_P_LOCALE_H
+#ifndef WQ_CORE_P_LOCALE_H
+#define WQ_CORE_P_LOCALE_H
 
 #include "wq/core/locale.h"
 
 namespace wq {
 namespace core {
 
-// private_data for locale class
-class WQ_EXPORT locale::private_data {
+// wq_data for locale class
+class WQ_EXPORT locale::wq_data {
     public:
         struct data {
 
@@ -33,9 +33,9 @@ class WQ_EXPORT locale::private_data {
         };
 
         // construction
-        private_data(locale::language, locale::country);
-        private_data(const string&);
-        private_data(const private_data&);
+        wq_data(locale::language, locale::country);
+        wq_data(const string&);
+        wq_data(const wq_data&);
 
         // getting informations about system locale
         static string system_locale_name();
@@ -51,8 +51,8 @@ class WQ_EXPORT locale::private_data {
         // if NULL data are taken from system (OS)
         data* m_data_ptr;
 
-        // array that holds all locale::private_data::data
-        static const locale::private_data::data sm_locales_data[];
+        // array that holds all locale::wq_data::data
+        static const locale::wq_data::data sm_locales_data[];
 
         // array that holds language names (0 - full, 1 - shortcut)
         static const char* sm_lang_names[][2];
@@ -65,4 +65,4 @@ class WQ_EXPORT locale::private_data {
 }  // namespace core
 }  // namespace wq
 
-#endif  // WQ_P_LOCALE_H
+#endif  // WQ_CORE_P_LOCALE_H

@@ -21,7 +21,7 @@
 namespace wq {
 namespace core {
 
-const char* locale::private_data::sm_lang_names[][2] = {
+const char* locale::wq_data::sm_lang_names[][2] = {
     {"", ""},   // unused - there is no language with ID 0
     {"C", ""},
     {"Abkhazian", "ab"},
@@ -190,7 +190,7 @@ const char* locale::private_data::sm_lang_names[][2] = {
     {"Chewa", "ny"}
 };
 
-const char* locale::private_data::sm_terr_names[][2] = {
+const char* locale::wq_data::sm_terr_names[][2] = {
     {"Any country", ""},
     {"Afghanistan", "AF"},
     {"Albania", "AL"},

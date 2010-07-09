@@ -21,7 +21,7 @@
 #include <sstream>
 #include <string>
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 
 namespace wq {
     //using namespace core;

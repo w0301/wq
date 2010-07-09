@@ -19,7 +19,7 @@
 #ifndef WQ_LIST_H
 #define WQ_LIST_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 
 #include <list>
 

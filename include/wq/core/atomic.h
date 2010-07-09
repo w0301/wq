@@ -19,7 +19,7 @@
 #ifndef WQ_ATOMIC_H
 #define WQ_ATOMIC_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 
 namespace wq {
 namespace core {

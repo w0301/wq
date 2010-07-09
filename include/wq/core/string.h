@@ -19,10 +19,10 @@
 #ifndef WQ_STRING_H
 #define WQ_STRING_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 #include "wq/core/encoder.h"
 #include "wq/core/allocator.h"
-#include "wq/core/shared_ptr.h"
+#include "wq/core/auto_ptr.h"
 
 #include <iterator>
 
@@ -52,7 +52,7 @@ class WQ_EXPORT string {
 				value_type();
 				value_type(int val);
 				value_type(wq::uint32 val) : m_val(val) { };
-				value_type(char, const text_encoder& = default_encoder());
+				value_type(char, const text_encoder& = ascii_encoder());
 				value_type(const char*, bool = true);
 				value_type(wq::uint16, wq::uint16, bool = true);
 
@@ -286,10 +286,10 @@ class WQ_EXPORT string {
                     return m_ptr;
                 };
                 bool is_first() const {
-                    return ptr() == owner()->s()->m_start;
+                    return ptr() == owner()->d()->m_start;
                 };
                 bool is_last() const {
-                    return ptr() == owner()->s()->m_last;
+                    return ptr() == owner()->d()->m_last;
                 };
                 void rebind(const reference&);
                 reference next() const;
@@ -557,19 +557,19 @@ class WQ_EXPORT string {
 
 		// size, capacity etc.
 		size_type size() const {
-			return s()->m_len;
+			return d()->m_len;
 		};
 		size_type length() const {
 			return size();
 		};
 		size_type capacity() const {
-			return s()->m_end - s()->m_start;
+			return d()->m_end - d()->m_start;
 		};
 		size_type bytes() const {
-			return s()->m_last - s()->m_start;
+			return d()->m_last - d()->m_start;
 		};
 		size_type max_size() const {
-			return s()->m_alloc.max_size();
+			return d()->m_alloc.max_size();
 		};
 		bool empty() const {
 			return size() == 0;
@@ -581,16 +581,16 @@ class WQ_EXPORT string {
 
 		// iterators
 		iterator begin() {
-			return iterator( reference(this, cs()->m_start) );
+			return iterator( reference(this, cd()->m_start) );
 		};
 		iterator end() {
-			return iterator( reference(this, cs()->m_last) );
+			return iterator( reference(this, cd()->m_last) );
 		};
 		const_iterator begin() const {
-			return const_iterator( reference(this, s()->m_start) );
+			return const_iterator( reference(this, d()->m_start) );
 		};
 		const_iterator end() const {
-			return const_iterator( reference(this, s()->m_last) );
+			return const_iterator( reference(this, d()->m_last) );
 		};
 
 		// reverse iterators
@@ -792,18 +792,18 @@ class WQ_EXPORT string {
 
 		// getters
 		const char* data() const {
-		    return s()->m_start;
+		    return d()->m_start;
 		};
 		allocator_type get_allocator() const {
-		    return s()->m_alloc;
+		    return d()->m_alloc;
 		};
 
 	private:
-		class shared_data {
+		class wq_data {
 			public:
-				shared_data() : m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) { };
-				shared_data(const shared_data&);
-				~shared_data();
+				wq_data() : m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) { };
+				wq_data(const wq_data&);
+				~wq_data();
 
 				char* m_start;
 				char* m_last;
@@ -817,7 +817,7 @@ class WQ_EXPORT string {
 
 		char* set_tempbuff(char* buff) const {
 		    if(m_tempbuff != NULL) {
-		        s()->m_alloc.deallocate(m_tempbuff);
+		        d()->m_alloc.deallocate(m_tempbuff);
 		    }
 		    return (m_tempbuff = buff);
 		};
@@ -828,6 +828,7 @@ class WQ_EXPORT string {
 
 	protected:
 		WQ_NEW_SHARED_DATA();
+		WQ_SHARED_DATA();
 };
 
 

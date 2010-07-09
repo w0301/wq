@@ -16,10 +16,10 @@
 **
 ****************************************************************************/
 
-#ifndef WQ_LOCALE_H
-#define WQ_LOCALE_H
+#ifndef WQ_CORE_LOCALE_H
+#define WQ_CORE_LOCALE_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 #include "wq/core/string.h"
 #include "wq/core/auto_ptr.h"
 
@@ -29,7 +29,7 @@ namespace core {
 // class that holds locale spefication
 class WQ_EXPORT locale {
     public:
-        class private_data;
+        class wq_data;
 
         // some enum - starting with capital because of names!
         enum language {
@@ -484,10 +484,11 @@ class WQ_EXPORT locale {
 
 
     protected:
-        WQ_NEW_PRIVATE_DATA();
+        WQ_NEW_SHARED_DATA();
+        WQ_SHARED_DATA_D();
 
     private:
-        // setting of encoding is allow only threw system_locale() funcstion
+        // setting of encoding is allow only threw system_locale() function
         string m_encoding;
         void set_encoding(const string& str) {
             m_encoding = str;
@@ -501,4 +502,4 @@ class WQ_EXPORT locale {
 } // namespace wq
 
 
-#endif  // WQ_LOCALE_H
+#endif  // WQ_CORE_LOCALE_H

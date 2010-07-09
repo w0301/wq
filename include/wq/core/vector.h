@@ -19,7 +19,7 @@
 #ifndef WQ_VECTOR_H
 #define WQ_VECTOR_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 
 #include <vector>
 

@@ -309,10 +309,7 @@ wq::pair<wq::uint16, wq::uint16> string::value_type::utf16() const {
     \sa utf8()
 */
 char string::value_type::ascii() const {
-    if(m_val <= 0x7F) {
-        return char(m_val);
-    }
-    return '?';
+    return bytes() == 1 ? char( utf32() ) : '?';
 }
 
 // private static functions
@@ -415,7 +412,7 @@ wq::uint32 string::value_type::decode_utf16(wq::uint16 w1, wq::uint16 w2, bool t
 // string::reference class
 string::reference::reference(string* owner, char* ptr) :
         value_type(), m_owner(owner), m_ptr(ptr) {
-    if(m_ptr == m_owner->cs()->m_last) {
+    if(m_ptr == m_owner->cd()->m_last) {
         value_type::operator= ( wq::uint32(0) );
     }
     else {
@@ -425,7 +422,7 @@ string::reference::reference(string* owner, char* ptr) :
 
 string::reference::reference(const string* owner, char* ptr) :
         value_type(), m_owner(const_cast<string*>(owner)), m_ptr(ptr) {
-    if(m_ptr == m_owner->cs()->m_last) {
+    if(m_ptr == m_owner->cd()->m_last) {
         value_type::operator= ( wq::uint32(0) );
     }
     else {
@@ -467,10 +464,10 @@ void string::reference::rebind(const reference& n) {
 
 // returns next character in string
 string::reference string::reference::next() const {
-    if(m_ptr + bytes() < owner()->s()->m_last) {
+    if(m_ptr + bytes() < owner()->d()->m_last) {
         return reference(m_owner, m_ptr + bytes());
     }
-    return reference(m_owner, owner()->s()->m_last);
+    return reference(m_owner, owner()->d()->m_last);
 }
 
 // returns previous character in string
@@ -488,10 +485,10 @@ string::reference string::reference::prev() const {
         }
         break;
     }
-    if(m_ptr - clen > owner()->s()->m_start) {
+    if(m_ptr - clen > owner()->d()->m_start) {
         return reference(m_owner, m_ptr - clen);
     }
-    return reference(m_owner, owner()->s()->m_start);
+    return reference(m_owner, owner()->d()->m_start);
 }
 
 // string::iterator class
@@ -566,10 +563,10 @@ string::const_iterator string::const_iterator::operator- (size_type n) const {
 	return ret;
 }
 
-// string::shared_data class
-string::allocator_type string::shared_data::m_alloc;
+// string::wq_data class
+string::allocator_type string::wq_data::m_alloc;
 
-string::shared_data::shared_data(const shared_data& from) :
+string::wq_data::wq_data(const wq_data& from) :
 		m_start(NULL), m_last(NULL), m_end(NULL), m_len(0) {
 	size_type size = from.m_last - from.m_start;
 	char* start = m_alloc.allocate(size);
@@ -581,7 +578,7 @@ string::shared_data::shared_data(const shared_data& from) :
 	m_len = from.m_len;
 }
 
-string::shared_data::~shared_data() {
+string::wq_data::~wq_data() {
 	if(m_start != NULL && m_last != NULL) {
 		// it is not necessary to call destroy function for objects
 		m_alloc.deallocate(m_start);
@@ -596,7 +593,7 @@ const string::size_type string::npos = -1;
 
 	This constructor constructs empty string.
 */
-string::string() : m_tempbuff(NULL), s_ptr(new shared_data) {
+string::string() : m_tempbuff(NULL), d_ptr(new wq_data) {
 
 }
 
@@ -606,7 +603,7 @@ string::string() : m_tempbuff(NULL), s_ptr(new shared_data) {
 	Constructor constructs string with the given context.
 */
 string::string(const char* str, size_type size, const text_encoder& enc) :
-        m_tempbuff(NULL), s_ptr(new shared_data) {
+        m_tempbuff(NULL), d_ptr(new wq_data) {
 	assign( enc.encode(str, size) );
 }
 
@@ -617,20 +614,20 @@ string::string(const char* str, size_type size, const text_encoder& enc) :
 	However constructor will perform shallow copy of string
 	and later, if it is necessary, deep copy will be performed.
 */
-string::string(const string& other) : m_tempbuff(NULL), s_ptr(other.s_ptr) {
+string::string(const string& other) : m_tempbuff(NULL), d_ptr(other.d_ptr) {
 
 }
 
-string::string(size_type n, const_reference c) : m_tempbuff(NULL), s_ptr(new shared_data) {
+string::string(size_type n, const_reference c) : m_tempbuff(NULL), d_ptr(new wq_data) {
     assign(n, c);
 }
 
-string::string(const_iterator first, const_iterator last) : m_tempbuff(NULL), s_ptr(new shared_data) {
+string::string(const_iterator first, const_iterator last) : m_tempbuff(NULL), d_ptr(new wq_data) {
     assign(first, last);
 }
 
 #if WQ_STD_COMPATIBILITY
-string::string(const std::string& std_str, const text_encoder& enc) : m_tempbuff(NULL), s_ptr(new shared_data) {
+string::string(const std::string& std_str, const text_encoder& enc) : m_tempbuff(NULL), d_ptr(new wq_data) {
     assign( enc.encode(std_str.data(), std_str.size()) );
 }
 #endif
@@ -646,7 +643,7 @@ string::~string() {
 
 string& string::operator= (const string& r) {
     if(&r != this) {
-        s_ptr.set_data(r.s_ptr);
+        d_ptr.set(r.d_ptr);
     }
     return *this;
 }
@@ -659,23 +656,23 @@ string& string::operator= (const string& r) {
 */
 void string::clear() {
     if(m_tempbuff != NULL) {
-         s()->m_alloc.deallocate(m_tempbuff);
+         d()->m_alloc.deallocate(m_tempbuff);
          m_tempbuff = NULL;
      }
     if(size() != 0) {
-		s_ptr.set_data(new shared_data);
+		d_ptr.set(new wq_data);
 	}
 }
 
 void string::reserve(size_type least_size) {
     // resize only if it is needed
-    size_type old_capacity = s()->m_end - s()->m_start;
-    size_type old_size = s()->m_last - s()->m_start;
+    size_type old_capacity = d()->m_end - d()->m_start;
+    size_type old_size = d()->m_last - d()->m_start;
     if(least_size == 0) {
         // now we want deallocate unneeded space
-        s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, old_size);
-        s()->m_end = s()->m_start + old_size;
-        s()->m_last = s()->m_start + old_size;
+        d()->m_start = d()->m_alloc.reallocate(d()->m_start, old_capacity, old_size);
+        d()->m_end = d()->m_start + old_size;
+        d()->m_last = d()->m_start + old_size;
     }
     else if(old_capacity < old_size + least_size) {
         // finding new capacity - always by multiplying with 2
@@ -683,9 +680,9 @@ void string::reserve(size_type least_size) {
         size_type new_capacity = old_capacity == 0 ? 1 : old_capacity;
         while(new_capacity < least_capacity) new_capacity = new_capacity * 2;
 
-        s()->m_start = s()->m_alloc.reallocate(s()->m_start, old_capacity, new_capacity);
-        s()->m_end = s()->m_start + new_capacity;
-        s()->m_last = s()->m_start + old_size;
+        d()->m_start = d()->m_alloc.reallocate(d()->m_start, old_capacity, new_capacity);
+        d()->m_end = d()->m_start + new_capacity;
+        d()->m_last = d()->m_start + old_size;
     }
 }
 
@@ -739,7 +736,7 @@ string& string::assign(const string& str, size_type from, size_type size) {
     // when we are assigning full object we can simply assign
     // shared data only
     if(from == 0 && size == str.size()) {
-        s_ptr.set_data(str.s_ptr);
+        d_ptr.set(str.d_ptr);
     }
     else {
         clear();
@@ -756,7 +753,7 @@ string& string::assign(size_type n, const_reference c) {
 string& string::assign(const_iterator first, const_iterator last) {
     if(first.m_val.is_first() && last.m_val.is_last()) {
         // we can simply assign shared data
-        s_ptr.set_data( first.m_val.owner()->s_ptr );
+        d_ptr.set( first.m_val.owner()->d_ptr );
     }
     else {
         // we will append new data
@@ -776,8 +773,8 @@ string& string::append(const string& str, size_type from, size_type size) {
         const_iterator last = first + size;
         size_type bytes_size = last.ptr() - first.ptr();
         reserve(bytes_size);
-        s()->m_last = s()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
-        s()->m_len += size;
+        d()->m_last = d()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
+        d()->m_len += size;
     }
     return *this;
 }
@@ -787,8 +784,8 @@ string& string::append(size_type n, const_reference c) {
     const char* c_buff = c.utf8();
     reserve(n * c_bytes);
     for(; n != 0; n--) {
-        s()->m_last = s()->m_alloc.copy(end().ptr(), c_buff, c_bytes);
-        s()->m_len++;
+        d()->m_last = d()->m_alloc.copy(end().ptr(), c_buff, c_bytes);
+        d()->m_len++;
     }
     return *this;
 }
@@ -797,8 +794,8 @@ string& string::append(const_iterator first, const_iterator last) {
     size_type bytes_size = last.ptr() - first.ptr();
     if(bytes_size > 0) {
         reserve(bytes_size);
-        s()->m_last = s()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
-        s()->m_len += last - first;
+        d()->m_last = d()->m_alloc.copy(end().ptr(), first.ptr(), bytes_size);
+        d()->m_len += last - first;
     }
     return *this;
 }
@@ -816,9 +813,9 @@ string& string::insert(size_type i, const string& str, size_type from, size_type
 
         reserve(insert_size);
         iterator cut_at = begin() + i;
-        s()->m_last = s()->m_alloc.ocopy(cut_at.ptr() + insert_size, cut_at.ptr(), end().ptr() - cut_at.ptr());
-        s()->m_alloc.copy(cut_at.ptr(), copy_from.ptr(), insert_size);
-        s()->m_len += size;
+        d()->m_last = d()->m_alloc.ocopy(cut_at.ptr() + insert_size, cut_at.ptr(), end().ptr() - cut_at.ptr());
+        d()->m_alloc.copy(cut_at.ptr(), copy_from.ptr(), insert_size);
+        d()->m_len += size;
     }
     return *this;
 }
@@ -848,8 +845,8 @@ string& string::erase(size_type from, size_type n) {
     if(n > 0) {
         iterator first = begin() + from;
         iterator last = first + n;
-        s()->m_last = s()->m_alloc.ocopy(first.ptr(), last.ptr(), end().ptr() - last.ptr());
-        s()->m_len -= n;
+        d()->m_last = d()->m_alloc.ocopy(first.ptr(), last.ptr(), end().ptr() - last.ptr());
+        d()->m_len -= n;
     }
     return *this;
 }
@@ -880,7 +877,7 @@ string::iterator string::erase(iterator start_iter, iterator end_iter) {
 }
 
 string& string::replace(size_type from, size_type n, const string& with, size_type from2, size_type n2) {
-    s_ptr.unshare_data();
+    d_ptr.detach();
     if(n2 == npos) {
         n2 = with.size();
     }
@@ -903,7 +900,7 @@ string& string::replace(size_type from, size_type n, const string& with, size_ty
     // things will be more complex because I want replacing as fast as possible
     if(erase_bytes == insert_bytes) {
         // just put it there
-        s()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), insert_bytes);
+        d()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), insert_bytes);
     }
     else if(erase_bytes < insert_bytes) {
         // next step will make our erase iterators invalid (in some cases only)
@@ -914,26 +911,26 @@ string& string::replace(size_type from, size_type n, const string& with, size_ty
         erase_to = erase_from + n;
 
         // copy as many bytes as possible => erase_bytes bytes
-        s()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), erase_bytes);
+        d()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), erase_bytes);
 
         // make space for other bytes
-        s()->m_last = s()->m_alloc.ocopy(erase_to.ptr() + (insert_bytes - erase_bytes),
+        d()->m_last = d()->m_alloc.ocopy(erase_to.ptr() + (insert_bytes - erase_bytes),
                                          erase_to.ptr(), end().ptr() - erase_to.ptr());
 
         // and put other bytes to right place
-        s()->m_alloc.copy(erase_to.ptr(), insert_from.ptr() + erase_bytes, insert_bytes - erase_bytes);
+        d()->m_alloc.copy(erase_to.ptr(), insert_from.ptr() + erase_bytes, insert_bytes - erase_bytes);
     }
     else if(erase_bytes > insert_bytes) {
         // copy all bytes to right place
-        s()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), insert_bytes);
+        d()->m_alloc.copy(erase_from.ptr(), insert_from.ptr(), insert_bytes);
 
         // and now copy data to left
-        s()->m_last = s()->m_alloc.ocopy(erase_from.ptr() + insert_bytes, erase_to.ptr(),
+        d()->m_last = d()->m_alloc.ocopy(erase_from.ptr() + insert_bytes, erase_to.ptr(),
                                          end().ptr() - erase_to.ptr());
     }
 
     // adding size
-    s()->m_len += n2 - n;
+    d()->m_len += n2 - n;
     return *this;
 }
 

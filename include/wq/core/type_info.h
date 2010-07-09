@@ -19,7 +19,7 @@
 #ifndef WQ_TYPE_INFO_H
 #define WQ_TYPE_INFO_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 
 #include <typeinfo>
 

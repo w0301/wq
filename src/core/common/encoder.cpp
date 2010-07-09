@@ -35,7 +35,7 @@ const char* encode_error::what() const throw() {
 }
 
 // text_encoder class
-auto_ptr<text_encoder> text_encoder::sm_default_encoder = NULL;
+text_encoder& text_encoder::sm_default_encoder = const_cast<text_encoder&>( system_encoder() );
 
 string text_encoder::encode(const char*, wq::size_t) const {
     return string();
@@ -50,10 +50,10 @@ string text_encoder::encode(const char*, wq::size_t) const {
     \param thexce \b True if you wish returned encoding to report errors by encode_error exception.
     \sa default_encoder(), wq_encoder()
 */
-const text_encoder* text_encoder::system_encoder(bool thexce) {
+const text_encoder& text_encoder::system_encoder(bool thexce) {
     static auto_ptr<text_encoder> s_sys_encoder;
     s_sys_encoder = locale::system_locale().encoder(thexce);
-    return s_sys_encoder.data();
+    return *s_sys_encoder;
 }
 
 /*!
@@ -67,10 +67,10 @@ const text_encoder* text_encoder::system_encoder(bool thexce) {
     \param thexce \b True if you wish returned encoding to report errors by encode_error exception.
     \sa wq::core::default_encoder(), default_encoder(), system_encoder()
 */
-const text_encoder* text_encoder::wq_encoder(bool thexce) {
+const text_encoder& text_encoder::wq_encoder(bool thexce) {
     static auto_ptr<text_encoder> s_wq_encoder = new utf8_encoder();
     s_wq_encoder->set_throwing(thexce);
-    return s_wq_encoder.data();
+    return *s_wq_encoder;
 };
 
 /*!
@@ -84,13 +84,9 @@ const text_encoder* text_encoder::wq_encoder(bool thexce) {
     \param thexce \b True if you wish returned encoding to report errors by encode_error exception.
     \sa wq_encoder(), system_encoder(), wq::core::default_encoder(), set_default_encoder()
 */
-const text_encoder* text_encoder::default_encoder(bool thexce) {
-    if(sm_default_encoder.is_ok()) {
-        sm_default_encoder->set_throwing(thexce);
-        return sm_default_encoder.data();
-    }
-    set_default_encoder( const_cast<text_encoder*>(system_encoder()) );
-    return default_encoder(thexce);
+const text_encoder& text_encoder::default_encoder(bool thexce) {
+    sm_default_encoder.set_throwing(thexce);
+    return sm_default_encoder;
 }
 
 // utf8_encoder class
@@ -200,6 +196,62 @@ char* cp1250_encoder::decode(const string& str, wq::size_t* out_size) const {
             }
         }
         // now simple construct new char in array
+        alloc.construct(ret + i, char(c));
+    }
+    alloc.construct(ret + i, '\0');
+
+    return ret;
+}
+
+// ascii_encoder class
+string ascii_encoder::encode(const char* str, wq::size_t size) const {
+    if(size == -1) {
+        size = strlen(str);
+    }
+    string ret_val;
+    ret_val.reserve(size);
+
+    for(wq::size_t i = 0; i != size; i++) {
+        // only first 127 characters are allowed in ASCII
+        if(str[i] > 127) {
+            if(is_throwing()) {
+                throw encode_error();
+            }
+            else {
+                ret_val.push_back( string::value_type::repl_char() );
+            }
+        }
+        else {
+            // there is one exception in ASCII to unicode table
+            ret_val.push_back( string::value_type(str[i] == 0x60 ? 0x2018 : wq::uint32(str[i])) );
+        }
+    }
+    return ret_val;
+}
+
+char* ascii_encoder::decode(const string& str, wq::size_t* out_size) const {
+    if(out_size != NULL) {
+        *out_size = str.size();
+    }
+    string::allocator_type alloc = str.get_allocator();
+    char* ret = alloc.allocate(str.size() + 1);
+
+    string::const_iterator end_iter = str.end();
+    wq::size_t i = 0;
+    for(string::const_iterator iter = str.begin(); iter != end_iter; iter++, i++) {
+        // first 0-127 are allowed (one exception) other menas repl_char or error
+        char c = '?';
+        if(iter->utf32() == 0x2018) {
+            c = char(0x60);
+        }
+        else if(iter->utf32() <= 127) {
+            c = char( iter->utf32() );
+        }
+        else {
+            if(is_throwing()) {
+                throw encode_error();
+            }
+        }
         alloc.construct(ret + i, char(c));
     }
     alloc.construct(ret + i, '\0');

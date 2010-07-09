@@ -30,13 +30,13 @@
 namespace wq {
 namespace core {
 
-// locale::private_data class
-locale::private_data::private_data(locale::language lang, locale::country cou) :
+// locale::wq_data class
+locale::wq_data::wq_data(locale::language lang, locale::country cou) :
         m_lang_index(lang), m_terr_index(cou), m_data_ptr(NULL) {
 
 }
 
-locale::private_data::private_data(const string& name) :
+locale::wq_data::wq_data(const string& name) :
         m_lang_index(), m_terr_index(), m_data_ptr(NULL) {
     string::size_type _pos = name.find( string::value_type('_') );
     string lang_code = name.substr(0, _pos);
@@ -57,12 +57,12 @@ locale::private_data::private_data(const string& name) :
     }
 }
 
-locale::private_data::private_data(const private_data& from) :
+locale::wq_data::wq_data(const wq_data& from) :
         m_lang_index(from.m_lang_index), m_terr_index(from.m_terr_index), m_data_ptr(from.m_data_ptr) {
 
 }
 
-string locale::private_data::system_locale_name() {
+string locale::wq_data::system_locale_name() {
     // we have to cache current locale
     const char *tmp_lc = setlocale(LC_ALL, NULL);
 
@@ -75,7 +75,7 @@ string locale::private_data::system_locale_name() {
     return ret_val;
 }
 
-string locale::private_data::system_locale_encoding() {
+string locale::wq_data::system_locale_encoding() {
     // we have to cache current locale
     const char *tmp_lc = setlocale(LC_ALL, NULL);
 
@@ -99,6 +99,7 @@ string locale::private_data::system_locale_encoding() {
     representations. It is also used to get informations about
     current or any other locale.
 */
+WQ_SHARED_DATA_I(locale);
 locale locale::sm_default_locale = locale::initial_default_locale();
 
 /*!
@@ -111,24 +112,24 @@ locale locale::sm_default_locale = locale::initial_default_locale();
     \param cou Territory/country of new locale.
 */
 locale::locale(language lang, country cou) :
-        p_ptr(new private_data(lang, cou)), m_encoding("UTF-8") {
+        d_ptr(new wq_data(lang, cou)), m_encoding("UTF-8") {
 
 }
 
 locale::locale(const string& name) :
-        p_ptr(new private_data(name)), m_encoding("UTF-8") {
+        d_ptr(new wq_data(name)), m_encoding("UTF-8") {
 
 }
 
 locale::locale(const locale& from) :
-        p_ptr(from.p_ptr), m_encoding(from.m_encoding) {
+        d_ptr(from.d_ptr), m_encoding(from.m_encoding) {
 
 }
 
 locale& locale::operator= (const locale& r) {
     if(&r != this) {
         m_encoding = r.m_encoding;
-        p_ptr = r.p_ptr;
+        d_ptr = r.d_ptr;
     }
     return *this;
 }
@@ -139,31 +140,31 @@ locale::~locale() {
 
 // getters
 locale::language locale::language_id() const {
-    return language(p()->m_lang_index);
+    return language(d()->m_lang_index);
 }
 
 locale::country locale::country_id() const {
-    return country(p()->m_terr_index);
+    return country(d()->m_terr_index);
 }
 
 string locale::language_name() const {
-    return string( private_data::sm_lang_names[p()->m_lang_index][0], utf8_encoder() );
+    return string( wq_data::sm_lang_names[d()->m_lang_index][0], utf8_encoder() );
 }
 
 string locale::language_shortcut() const {
-    return string( private_data::sm_lang_names[p()->m_lang_index][1], utf8_encoder() );
+    return string( wq_data::sm_lang_names[d()->m_lang_index][1], utf8_encoder() );
 }
 
 string locale::country_name() const {
-    return string( private_data::sm_terr_names[p()->m_terr_index][0], utf8_encoder() );
+    return string( wq_data::sm_terr_names[d()->m_terr_index][0], utf8_encoder() );
 }
 
 string locale::country_shortcut() const {
-    return string( private_data::sm_terr_names[p()->m_terr_index][1], utf8_encoder() );
+    return string( wq_data::sm_terr_names[d()->m_terr_index][1], utf8_encoder() );
 }
 
 string locale::name() const {
-    if(p()->m_lang_index == C) {
+    if(d()->m_lang_index == C) {
         return string();
     }
     return language_shortcut() + '_' + country_shortcut();
@@ -172,19 +173,19 @@ string locale::name() const {
 text_encoder* locale::encoder(bool throwing) const {
     string enc = encoding();
     if(enc.compare("UTF-8", false) == 0 || enc.compare("UTF8", false) == 0) {
-        new utf8_encoder(throwing);
+        return new utf8_encoder(throwing);
     }
     if(enc.compare("cp1250", false) == 0) {
-        new cp1250_encoder(throwing);
+        return new cp1250_encoder(throwing);
     }
-    // other encodings will come here
-    return new utf8_encoder(throwing);
+    // this is out fallback encoding
+    return new ascii_encoder(throwing);
 }
 
 // static functions
 locale locale::system_locale() {
-    locale ret_lc( private_data::system_locale_name() );
-    ret_lc.set_encoding( private_data::system_locale_encoding() );
+    locale ret_lc( wq_data::system_locale_name() );
+    ret_lc.set_encoding( wq_data::system_locale_encoding() );
     return ret_lc;
 }
 

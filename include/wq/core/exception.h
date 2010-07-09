@@ -19,7 +19,7 @@
 #ifndef WQ_EXCEPTION_H
 #define WQ_EXCEPTION_H
 
-#include "wq/defs.h"
+#include "wq/core/defs.h"
 
 #if WQ_STD_COMPATIBILITY
 	#include <exception>

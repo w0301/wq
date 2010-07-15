@@ -24,7 +24,7 @@
 namespace wq {
 namespace core {
 
-// template class only for few types:
+// template class only for few types is allowed
 template<class T> class atomic;
 
 // all functions return old value of variable
@@ -34,8 +34,8 @@ template<> class atomic<int> {
 		typedef int value_type;
 
 		// creation
-		atomic(int val = 0) : m_num(val) { };
-		atomic& operator= (int val) {
+		atomic(value_type val = 0) : m_num(val) { };
+		atomic& operator= (value_type val) {
 			set(val);
 			return *this;
 		};
@@ -49,10 +49,10 @@ template<> class atomic<int> {
 		};
 
 		// operating with value
-		int set(int);
-		int cmp_set(int, int);
-		int inc(int = 1);
-		int dec(int by = 1) {
+		int set(value_type);
+		int cmp_set(value_type, value_type);
+		int inc(value_type = 1);
+		int dec(value_type by = 1) {
 			return inc(-by);
 		};
 		int val() const {
@@ -60,26 +60,26 @@ template<> class atomic<int> {
 		};
 
 		// some operators
-		atomic& operator+= (int by) {
+		atomic& operator+= (value_type by) {
 			inc(by);
 			return *this;
 		};
-		atomic& operator-= (int by) {
+		atomic& operator-= (value_type by) {
 			dec(by);
 			return *this;
 		};
-		atomic& operator++ (int) {
+		atomic& operator++ (value_type) {
 			return ((*this) += 1);
 		};
-		atomic& operator-- (int by) {
+		atomic& operator-- (value_type by) {
 			return ((*this) -= 1);
 		};
 
 		// not atomic comparing
-		bool operator== (int r) const {
+		bool operator== (value_type r) const {
 			return val() == r;
 		};
-		bool operator!= (int r) const {
+		bool operator!= (value_type r) const {
 			return val() != r;
 		};
 
@@ -89,10 +89,10 @@ template<> class atomic<int> {
 		};
 
 	private:
-		volatile int m_num;
+		volatile value_type m_num;
 };
 
-inline int atomic<int>::set(int new_val) {
+inline int atomic<int>::set(value_type new_val) {
 	int old;
 #if defined(__i386__) || defined(__x86_64__)
 	asm __volatile__
@@ -106,7 +106,7 @@ inline int atomic<int>::set(int new_val) {
 	return old;
 }
 
-inline int atomic<int>::cmp_set(int cmp_val, int new_val) {
+inline int atomic<int>::cmp_set(value_type cmp_val, value_type new_val) {
 #if defined(__i386__) || defined(__x86_64__)
 	int old;
 	asm __volatile__
@@ -120,7 +120,7 @@ inline int atomic<int>::cmp_set(int cmp_val, int new_val) {
 	return old;
 }
 
-inline int atomic<int>::inc(int by) {
+inline int atomic<int>::inc(value_type by) {
 #if defined(__i386__) || defined(__x86_64__)
 	asm __volatile__
 	(

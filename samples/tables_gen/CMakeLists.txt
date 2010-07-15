@@ -3,9 +3,8 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 
 # Setting sources for sample.
-set(UNI_TABLES_SOURCES "main.cpp")
+set(TABLES_GEN_SOURCES "main.cpp")
 
 # Building executable of sample and linking needed libraries.
-add_executable(uni_tables ${UNI_TABLES_SOURCES})
-target_link_libraries(uni_tables ${WQ_CORE_LIB_NAME})
-
+add_executable(tables_gen ${TABLES_GEN_SOURCES})
+target_link_libraries(tables_gen ${WQ_CORE_LIB_NAME})

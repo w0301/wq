@@ -16,8 +16,8 @@
 **
 ****************************************************************************/
 
-#ifndef WQ_VECTOR_H
-#define WQ_VECTOR_H
+#ifndef WQ_CORE_VECTOR_H
+#define WQ_CORE_VECTOR_H
 
 #include "wq/core/defs.h"
 
@@ -61,4 +61,4 @@ template<class T, class Allocator = std::allocator<T> > class vector : public st
 }  // namespace wq
 
 
-#endif  // WQ_VECTOR_H
+#endif  // WQ_CORE_VECTOR_H

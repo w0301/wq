@@ -544,6 +544,9 @@ class WQ_EXPORT string {
 
         #if WQ_STD_COMPATIBILITY
             string(const std::string&, const text_encoder& = default_encoder());
+            std::string std_str(const text_encoder& enc = default_encoder()) const {
+                return std::string( any_str(enc) );
+            };
         #endif
 
 		// destruction
@@ -682,6 +685,24 @@ class WQ_EXPORT string {
 		int compare(size_type from, size_type n, const char* str, size_type size = npos, bool cs = true, const text_encoder& enc = default_encoder()) const {
 		    return compare(from, n, string(str, size, enc), 0, npos, cs);
 		};
+		bool operator== (const string& r) const {
+		    return compare(r, 0, npos, true) == 0;
+		};
+		bool operator== (const char* r) const {
+		    return compare(r, true, default_encoder()) == 0;
+		};
+		bool operator== (const value_type& c) const {
+		    return compare(string(1, c), 0, npos, true) == 0;
+		};
+        bool operator!= (const string& r) const {
+            return compare(r, 0, npos, true) != 0;
+        };
+        bool operator!= (const char* r) const {
+            return compare(r, true, default_encoder()) != 0;
+        };
+        bool operator!= (const value_type& c) const {
+            return compare(string(1, c), 0, npos, true) != 0;
+        };
 
 		// finding
 		size_type find(const string&, size_type = 0, bool = true) const;
@@ -769,13 +790,13 @@ class WQ_EXPORT string {
 		    return append(c);
 		};
 
-		string operator+ (const string& str) {
+		string operator+ (const string& str) const {
             return string(*this).append(str);
         };
-        string operator+ (const char* str) {
+        string operator+ (const char* str) const {
             return string(*this).append(str);
         };
-        string operator+ (const_reference c) {
+        string operator+ (const_reference c) const {
             return string(*this).append(c);
         };
 
@@ -783,11 +804,14 @@ class WQ_EXPORT string {
 		const char* any_str(const text_encoder& enc) const {
 		    return set_tempbuff( enc.decode(*this) );
 		}
+		const char* locale_str(bool err = true) const {
+		    return any_str( text_encoder::system_encoder(err) );
+		};
 		const char* utf8_str(bool err = true) const {
 		    return any_str( utf8_encoder(err) );
 		};
 		const char* c_str(bool err = true) const {
-			return utf8_str(err);
+			return any_str( ascii_encoder(err) );
 		};
 
 		// getters

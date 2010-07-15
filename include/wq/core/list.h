@@ -16,8 +16,8 @@
 **
 ****************************************************************************/
 
-#ifndef WQ_LIST_H
-#define WQ_LIST_H
+#ifndef WQ_CORE_LIST_H
+#define WQ_CORE_LIST_H
 
 #include "wq/core/defs.h"
 
@@ -61,4 +61,4 @@ template<class T, class Allocator = std::allocator<T> > class list : public std:
 }  // namespace wq
 
 
-#endif  // WQ_LIST_H
+#endif  // WQ_CORE_LIST_H

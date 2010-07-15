@@ -76,5 +76,22 @@ string_list string_list::from_string(const string& str, string::const_reference 
     return result;
 }
 
+bool string_list::compare(const string_list& list, bool cs) const {
+    if(size() != list.size()) {
+        return false;
+    }
+
+    const_iterator i1 = begin();
+    const_iterator i2 = list.begin();
+    while(i1 != end() || i2 != list.end()) {
+        if( i1->compare(*i2, 0, string::npos, cs) != 0 ) {
+            return false;
+        }
+        i1++;
+        i2++;
+    }
+    return true;
+}
+
 }
 }

@@ -21,6 +21,7 @@
 namespace wq {
 namespace core {
 
+// names and shortcuts of all languages
 const char* locale::wq_data::sm_lang_names[][2] = {
     {"", ""},   // unused - there is no language with ID 0
     {"C", ""},
@@ -190,6 +191,7 @@ const char* locale::wq_data::sm_lang_names[][2] = {
     {"Chewa", "ny"}
 };
 
+// names and shortcuts of all territories
 const char* locale::wq_data::sm_terr_names[][2] = {
     {"Any country", ""},
     {"Afghanistan", "AF"},

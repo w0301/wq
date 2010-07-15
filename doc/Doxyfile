@@ -663,7 +663,8 @@ EXCLUDE_SYMLINKS       = YES
 # against the file with absolute path, so to exclude all test directories 
 # for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       = */p/*
+EXCLUDE_PATTERNS       = */p/* \
+                         */.git/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names 
 # (namespaces, classes, functions, etc.) that should be excluded from the 
@@ -1405,7 +1406,11 @@ PREDEFINED             =
 # The macro definition that is found in the sources will be used. 
 # Use the PREDEFINED tag if you want to use a different macro definition.
 
-EXPAND_AS_DEFINED      = 
+EXPAND_AS_DEFINED      = WQ_NEW_SHARED_DATA \
+                         WQ_SHARED_DATA \
+                         WQ_SHARED_DATA_D \
+                         WQ_SHARED_DATA_I \
+                         WQ_NO_THROW
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES (the default) then 
 # doxygen's preprocessor will remove all function-like macros that are alone 

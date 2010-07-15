@@ -53,6 +53,15 @@ class WQ_EXPORT string_list : public list<string> {
         // new functions for converting
         string to_string(string::const_reference = string::value_type::delim_char()) const;
         static string_list from_string(const string&, string::const_reference = string::value_type::delim_char());
+
+        // comparing returning boolean
+        bool compare(const string_list& list, bool cs = true) const;
+        bool operator== (const string_list& r) const {
+            return compare(r, true);
+        };
+        bool operator!= (const string_list& r) const {
+            return !compare(r, true);
+        };
 };
 
 

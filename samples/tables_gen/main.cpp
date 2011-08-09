@@ -39,7 +39,7 @@ class locale_gen {
         wq::string create_tables();
 
     private:
-        void put_one_table(const wq::vector<wq::string_list>&, wq::string&);
+        void put_one_table(const wq::vector<wq::string_list>&, wq::string&, const wq::string& = "table_name");
 
         // data for tables
         wq::vector<wq::string_list> m_days_names;
@@ -61,104 +61,111 @@ class locale_gen {
 
 void locale_gen::add_locale(const wq::string& name) {
     // setting locale
-    wq::locale wq_locale(name);
-    wq::string enc_name = wq::locale::system_locale().encoding();
-    wq::string locale_name = name + "." + enc_name;
-    setlocale( LC_ALL, locale_name.c_str() );
+    try {
+        wq::locale wq_locale( name.substr( 0, name.find('.') ) );
+        if( !name.empty() ) {
+            setlocale( LC_ALL, name.c_str() );
+        }
+        else {
+            setlocale(LC_ALL, "C");
+        }
 
+        locale_indexes new_indexes;
+        new_indexes.m_lang = wq_locale.language_id();
+        new_indexes.m_terr = wq_locale.country_id();
 
-    locale_indexes new_indexes;
-    new_indexes.m_lang = wq_locale.language_id();
-    new_indexes.m_terr = wq_locale.country_id();
-
-    // extracting informations from os's locale database
-    // this most works only on unix
+        // extracting informations from os's locale database
+        // this most works only on unix
 #ifdef WQ_UNIX
-    wq::string_list to_add;
+        wq::string_list to_add;
 
-    // iterator that is used to determine index
-    wq::vector<wq::string_list>::const_iterator iter;
+        // iterator that is used to determine index
+        wq::vector<wq::string_list>::const_iterator iter;
 
-    to_add.push_back( wq::string( nl_langinfo(DAY_1) ) );
-    to_add.push_back( wq::string( nl_langinfo(DAY_2) ) );
-    to_add.push_back( wq::string( nl_langinfo(DAY_3) ) );
-    to_add.push_back( wq::string( nl_langinfo(DAY_4) ) );
-    to_add.push_back( wq::string( nl_langinfo(DAY_5) ) );
-    to_add.push_back( wq::string( nl_langinfo(DAY_6) ) );
-    to_add.push_back( wq::string( nl_langinfo(DAY_7) ) );
-    if( (iter = std::find(m_days_names.begin(), m_days_names.end(), to_add)) == m_days_names.end() ) {
-        m_days_names.push_back(to_add);
-        new_indexes.m_days = m_days_names.size() - 1;
-    }
-    else {
-        new_indexes.m_days = iter - m_days_names.begin();
-    }
+        to_add.push_back( wq::string( nl_langinfo(DAY_1) ) );
+        to_add.push_back( wq::string( nl_langinfo(DAY_2) ) );
+        to_add.push_back( wq::string( nl_langinfo(DAY_3) ) );
+        to_add.push_back( wq::string( nl_langinfo(DAY_4) ) );
+        to_add.push_back( wq::string( nl_langinfo(DAY_5) ) );
+        to_add.push_back( wq::string( nl_langinfo(DAY_6) ) );
+        to_add.push_back( wq::string( nl_langinfo(DAY_7) ) );
+        if( (iter = std::find(m_days_names.begin(), m_days_names.end(), to_add)) == m_days_names.end() ) {
+            m_days_names.push_back(to_add);
+            new_indexes.m_days = m_days_names.size() - 1;
+        }
+        else {
+            new_indexes.m_days = iter - m_days_names.begin();
+        }
 
-    to_add.clear();
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_1) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_2) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_3) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_4) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_5) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_6) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABDAY_7) ) );
-    if( (iter = std::find(m_ab_days_names.begin(), m_ab_days_names.end(), to_add)) == m_ab_days_names.end() ) {
-        m_ab_days_names.push_back(to_add);
-        new_indexes.m_ab_days = m_ab_days_names.size() - 1;
-    }
-    else {
-        new_indexes.m_ab_days = iter - m_ab_days_names.begin();
-    }
+        to_add.clear();
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_1) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_2) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_3) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_4) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_5) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_6) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABDAY_7) ) );
+        if( (iter = std::find(m_ab_days_names.begin(), m_ab_days_names.end(), to_add)) == m_ab_days_names.end() ) {
+            m_ab_days_names.push_back(to_add);
+            new_indexes.m_ab_days = m_ab_days_names.size() - 1;
+        }
+        else {
+            new_indexes.m_ab_days = iter - m_ab_days_names.begin();
+        }
 
-    to_add.clear();
-    to_add.push_back( wq::string( nl_langinfo(MON_1) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_2) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_3) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_4) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_5) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_6) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_7) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_8) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_9) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_10) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_11) ) );
-    to_add.push_back( wq::string( nl_langinfo(MON_12) ) );
-    if( (iter = std::find(m_months_names.begin(), m_months_names.end(), to_add)) == m_months_names.end() ) {
-        m_months_names.push_back(to_add);
-        new_indexes.m_months = m_months_names.size() - 1;
-    }
-    else {
-        new_indexes.m_months = iter - m_months_names.begin();
-    }
+        to_add.clear();
+        to_add.push_back( wq::string( nl_langinfo(MON_1) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_2) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_3) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_4) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_5) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_6) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_7) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_8) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_9) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_10) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_11) ) );
+        to_add.push_back( wq::string( nl_langinfo(MON_12) ) );
+        if( (iter = std::find(m_months_names.begin(), m_months_names.end(), to_add)) == m_months_names.end() ) {
+            m_months_names.push_back(to_add);
+            new_indexes.m_months = m_months_names.size() - 1;
+        }
+        else {
+            new_indexes.m_months = iter - m_months_names.begin();
+        }
 
-    to_add.clear();
-    to_add.push_back( wq::string( nl_langinfo(ABMON_1) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_2) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_3) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_4) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_5) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_6) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_7) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_8) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_9) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_10) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_11) ) );
-    to_add.push_back( wq::string( nl_langinfo(ABMON_12) ) );
-    if( (iter = std::find(m_ab_months_names.begin(), m_ab_months_names.end(), to_add)) == m_ab_months_names.end() ) {
-        m_ab_months_names.push_back(to_add);
-        new_indexes.m_ab_months = m_ab_months_names.size() - 1;
-    }
-    else {
-        new_indexes.m_ab_months = iter - m_ab_months_names.begin();
-    }
+        to_add.clear();
+        to_add.push_back( wq::string( nl_langinfo(ABMON_1) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_2) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_3) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_4) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_5) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_6) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_7) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_8) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_9) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_10) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_11) ) );
+        to_add.push_back( wq::string( nl_langinfo(ABMON_12) ) );
+        if( (iter = std::find(m_ab_months_names.begin(), m_ab_months_names.end(), to_add)) == m_ab_months_names.end() ) {
+            m_ab_months_names.push_back(to_add);
+            new_indexes.m_ab_months = m_ab_months_names.size() - 1;
+        }
+        else {
+            new_indexes.m_ab_months = iter - m_ab_months_names.begin();
+        }
 #endif
-    m_locale_indexes.push_back( new_indexes );
+        m_locale_indexes.push_back( new_indexes );
+    }
+    catch(wq::locale_error& err) {
+        return;
+    }
 }
 
-void locale_gen::put_one_table(const wq::vector<wq::string_list>& table, wq::string& out_str) {
+void locale_gen::put_one_table(const wq::vector<wq::string_list>& table, wq::string& out_str, const wq::string& table_name) {
     char buffer[5];
     sprintf(buffer, "%d", table.front().size());
-    out_str = out_str + "const char* locale::wq_data::table_name[][" + buffer + "] = {\n";
+    out_str = out_str + "const char* locale::wq_data::" + table_name + "[][" + buffer + "] = {\n";
     for(wq::vector<wq::string_list>::const_iterator i = table.begin(); i != table.end(); i++) {
         out_str += "{";
         for(wq::string_list::const_iterator i2 = i->begin(); i2 != i->end(); i2++) {
@@ -179,7 +186,7 @@ void locale_gen::put_one_table(const wq::vector<wq::string_list>& table, wq::str
 wq::string locale_gen::create_tables() {
     wq::string ret_str;
     char buffer[15];
-    ret_str = ret_str + "locale::wq_data::data locale::wq_data::table_name[] = {\n";
+    ret_str = ret_str + "locale::wq_data::data locale::wq_data::locales[] = {\n";
     for(wq::vector<locale_indexes>::const_iterator iter = m_locale_indexes.begin(); iter != m_locale_indexes.end(); iter++) {
         sprintf(buffer, "{%d, ", iter->m_lang);
         ret_str += buffer;
@@ -200,13 +207,13 @@ wq::string locale_gen::create_tables() {
     }
     ret_str += "};\n\n";
 
-    put_one_table(m_days_names, ret_str);
+    put_one_table(m_days_names, ret_str, "days_names");
     ret_str += "\n\n";
-    put_one_table(m_ab_days_names, ret_str);
+    put_one_table(m_ab_days_names, ret_str, "ab_days_names");
     ret_str += "\n\n";
-    put_one_table(m_months_names, ret_str);
+    put_one_table(m_months_names, ret_str, "months_names");
     ret_str += "\n\n";
-    put_one_table(m_ab_months_names, ret_str);
+    put_one_table(m_ab_months_names, ret_str, "ab_months_names");
 
     return ret_str;
 }
@@ -237,7 +244,6 @@ void utf8bit_gen::add_line(wq::string str) {
     m_mapp_arr_pos++;
 }
 
-
 wq::string utf8bit_gen::create_table() {
     wq::string ret_str;
 
@@ -257,7 +263,6 @@ wq::string utf8bit_gen::create_table() {
     ret_str += "};";
     return ret_str;
 }
-
 
 /*!
     This program takes file (argument for program) in format like this:
@@ -299,6 +304,7 @@ int main(int argc, char* args[]) {
     }
     if(wq::string(args[1]) == "-l") {
         locale_gen generator;
+        generator.add_locale( wq::string() );
         for(int i = 0; i != argc - 2; i++) {
             generator.add_locale( wq::string( args[i + 2] ) );
         }

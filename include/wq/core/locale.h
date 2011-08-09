@@ -26,6 +26,13 @@
 namespace wq {
 namespace core {
 
+// exception for locales
+class locale_error : public exception {
+    public:
+        locale_error() throw() : exception() { };
+        const char* what() const throw();
+};
+
 // class that holds locale spefication
 class WQ_EXPORT locale {
     public:

@@ -23,7 +23,7 @@ namespace core {
 
 // names and shortcuts of all languages
 const char* locale::wq_data::sm_lang_names[][2] = {
-    {"", ""},   // unused - there is no language with ID 0
+    {"", ""},   // undefined
     {"C", ""},
     {"Abkhazian", "ab"},
     {"Afan", "om"},
@@ -436,6 +436,7 @@ const char* locale::wq_data::sm_terr_names[][2] = {
     {"Zimbabwe", "ZW"},
     {"Serbia and Montenegro", "CS"}
 };
+
 
 
 }  // namespace core

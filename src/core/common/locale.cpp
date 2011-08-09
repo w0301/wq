@@ -30,6 +30,11 @@
 namespace wq {
 namespace core {
 
+// locale_error class
+const char* locale_error::what() const throw() {
+    return "required locale does not exist";
+}
+
 // locale::wq_data class
 locale::wq_data::wq_data(locale::language lang, locale::country cou) :
         m_lang_index(lang), m_terr_index(cou), m_data_ptr(NULL) {
@@ -37,22 +42,32 @@ locale::wq_data::wq_data(locale::language lang, locale::country cou) :
 }
 
 locale::wq_data::wq_data(const string& name) :
-        m_lang_index(), m_terr_index(), m_data_ptr(NULL) {
-    string::size_type _pos = name.find( string::value_type('_') );
-    string lang_code = name.substr(0, _pos);
-    string terr_code = name.substr(_pos + 1, name.size() - (_pos + 1));
+        m_lang_index(1), m_terr_index(0), m_data_ptr(NULL) {
+    if( !name.empty() ) {
+        string::size_type _pos = name.find( string::value_type('_') );
+        string lang_code = name.substr(0, _pos);
+        string terr_code = name.substr(_pos + 1, name.size() - (_pos + 1));
 
-    // finding language index
-    for(wq::ushort i = 0; i != locale::last_language; i++) {
-        if(string(sm_lang_names[i][1]).compare(lang_code, false) == 0) {
-            m_lang_index = i;
+        // finding language index
+        for(wq::ushort i = 0; i != locale::last_language; i++) {
+            if(string(sm_lang_names[i][1]).compare(lang_code, false) == 0) {
+                m_lang_index = i;
+            }
         }
-    }
+        if(m_lang_index == 1) {
+            // there is no such language
+            throw locale_error();
+        }
 
-    // finding territory index
-    for(wq::ushort i = 0; i != locale::last_country; i++) {
-        if(string(sm_terr_names[i][1]).compare(terr_code, false) == 0) {
-            m_terr_index = i;
+        // finding territory index
+        for(wq::ushort i = 0; i != locale::last_country; i++) {
+            if(string(sm_terr_names[i][1]).compare(terr_code, false) == 0) {
+                m_terr_index = i;
+            }
+        }
+        if(m_terr_index == 0) {
+            // there is no such territory
+            throw locale_error();
         }
     }
 }
